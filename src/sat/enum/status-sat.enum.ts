@@ -1,0 +1,5 @@
+export enum StatusSatEnum {
+    PENDENTE = 'PENDENTE',
+    ENVIADO_BAGUA = 'ENVIADO_BAGUA',
+    ENVIADO_BSOLVENTE = 'ENVIADO_BSOLVENTE',
+}
