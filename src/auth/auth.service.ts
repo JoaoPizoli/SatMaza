@@ -28,14 +28,14 @@ export class AuthService {
         if (dto.email) {
             usuario = await this.usuarioService.findByEmail(dto.email);
 
-            if (!usuario || usuario.tipo !== TipoUsuarioEnum.ADMIN) {
-                throw new UnauthorizedException("Credenciais invÃ¡lidas");
+            if (!usuario || ![TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE].includes(usuario.tipo)) {
+                throw new UnauthorizedException("Credenciais inválidas");
             }
         } else if (dto.usuario) {
             usuario = await this.usuarioService.findByUsuario(dto.usuario);
 
-            if (!usuario || usuario.tipo === TipoUsuarioEnum.ADMIN) {
-                throw new UnauthorizedException("Credenciais invÃ¡lidas");
+            if (!usuario) {
+                throw new UnauthorizedException("Credenciais inválidas");
             }
         } else {
             throw new UnauthorizedException("Informe email ou usuario");

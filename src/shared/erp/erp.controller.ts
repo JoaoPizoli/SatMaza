@@ -11,7 +11,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@ne
 export class ErpController {
     constructor(
         private readonly erpService: ErpService
-    ) {}
+    ) { }
 
     @Get('clientes')
     @ApiOperation({ summary: 'Listar clientes do ERP', description: 'Retorna a lista de clientes do ERP vinculados ao representante autenticado' })
@@ -28,9 +28,18 @@ export class ErpController {
     @ApiOperation({ summary: 'Listar Produtos', description: 'Retorna a lista de produtos ativos do ERP' })
     @ApiQuery({ name: 'busca', required: false, description: 'Termo de busca para filtrar produtos', example: 'TINNER' })
     @ApiResponse({ status: 200, description: 'Lista de produtos retornada com sucesso' })
-    @ApiResponse({ status: 401, description: 'NÃ£o autenticado' })
+    @ApiResponse({ status: 401, description: 'Não autenticado' })
     async buscarProdutos(@Query('busca') busca?: string) {
         return await this.erpService.buscarProdutos(busca);
+    }
+
+    @Get('representante')
+    @ApiOperation({ summary: 'Buscar dados do representante', description: 'Retorna o código e nome do representante autenticado a partir do ERP' })
+    @ApiResponse({ status: 200, description: 'Dados do representante retornados com sucesso' })
+    @ApiResponse({ status: 401, description: 'Não autenticado' })
+    async buscarRepresentante(@CurrentUser() user: UserFromToken) {
+        const repreId = user.usuario;
+        return await this.erpService.buscarRepresentante(repreId);
     }
 
 

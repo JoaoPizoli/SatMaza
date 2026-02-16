@@ -7,22 +7,33 @@ export class ErpService {
     constructor(
         @InjectDataSource("erp_mysql")
         private readonly erpDataSource: DataSource,
-    ) {}
+    ) { }
 
-    async listarClientes(repreId: string, nomcli?: string): Promise<any[]> {
+    async listarClientes(repreId: string, busca?: string): Promise<any[]> {
         const repreIdStr = String(repreId).padStart(3, "0");
 
-        if (nomcli && nomcli.trim()) {
+        if (busca && busca.trim()) {
             return await this.erpDataSource.query(
-                "SELECT CODCLI, NOMCLI, CODREP, NOMREP FROM VW_CLIENTES_ATIVOS WHERE (NOMCLI LIKE ?) AND CODREP = ? LIMIT 50",
-                [`%${nomcli}%`, repreIdStr],
+                "SELECT CODCLI, NOMCLI, CODREP, NOMREP, CIDADE FROM VW_CLIENTES_ATIVOS WHERE (NOMCLI LIKE ? OR CODCLI LIKE ?) AND CODREP = ? LIMIT 50",
+                [`%${busca}%`, `%${busca}%`, repreIdStr],
             );
         }
 
         return await this.erpDataSource.query(
-            "SELECT CODCLI, NOMCLI, CODREP, NOMREP FROM VW_CLIENTES_ATIVOS WHERE CODREP = ? LIMIT 50",
+            "SELECT CODCLI, NOMCLI, CODREP, NOMREP, CIDADE FROM VW_CLIENTES_ATIVOS WHERE CODREP = ? LIMIT 50",
             [repreIdStr],
         );
+    }
+
+    async buscarRepresentante(repreId: string): Promise<{ CODREP: string; NOMREP: string } | null> {
+        const repreIdStr = String(repreId).padStart(3, "0");
+
+        const rows = await this.erpDataSource.query(
+            "SELECT DISTINCT CODREP, NOMREP FROM VW_CLIENTES_ATIVOS WHERE CODREP = ? LIMIT 1",
+            [repreIdStr],
+        );
+
+        return rows.length > 0 ? rows[0] : null;
     }
 
     async buscarProdutos(busca?: string): Promise<any[]> {
@@ -31,7 +42,7 @@ export class ErpService {
                 `SELECT * FROM VW_PRODUTOS WHERE 
                     (DESCRICAO_ITEM LIKE ? OR CODIGO_ITEM LIKE ?) 
                     AND DEPARTAMENTO = 'PRODUTO ACABADO'
-                    AND CODIGO_EMPRESA = 001 LIMIT 50`,
+                    AND CODIGO_EMPRESA = 001`,
                 [`%${busca}%`, `%${busca}%`],
             );
         }
