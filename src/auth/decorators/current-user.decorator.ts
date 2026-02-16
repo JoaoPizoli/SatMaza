@@ -6,3 +6,10 @@ export const CurrentUser = createParamDecorator(
         return request.user;
     },
 );
+
+export interface UserFromToken {
+    id: number;
+    email: string;
+    tipo: string;
+    usuario: string;
+}

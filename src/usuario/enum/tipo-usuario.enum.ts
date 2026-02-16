@@ -1,5 +1,6 @@
 export enum TipoUsuarioEnum {
     ADMIN = 'ADMIN',
+    ORQUESTRADOR = 'ORQUESTRADOR',
     BAGUA  = 'BAGUA',
     BSOLVENTE = 'BSOLVENTE',
     REPRESENTANTE = 'REPRESENTANTE',

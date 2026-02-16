@@ -3,12 +3,12 @@ import { SatEntity } from "./entity/sat.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CreateSatDto } from "./dto/create-sat.dto";
-import { MediaAttachmentService } from "src/mediaAttachment/mediaAttachment.service";
 import { AvtService } from "src/avt/avt.service";
 import { CreateAvtDto } from "src/avt/dto/create-avt.dto";
 import { AvtEntity } from "src/avt/entity/avt.entity";
 import { UpdateAvtDto } from "src/avt/dto/update-avt.dto";
 import { StatusAvtEnum } from "src/avt/enum/status-avt.enum";
+import { StatusSatEnum } from "./enum/status-sat.enum";
 import { LaboratorioSatEnum } from "./enum/laboratorio-sat.enum";
 import { UsuarioService } from "src/usuario/usuario.service";
 import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
@@ -22,7 +22,6 @@ export class SatService {
         private satRepository: Repository<SatEntity>,
         private usuarioService: UsuarioService,
         private avtService: AvtService,
-        private mediaService: MediaAttachmentService,
     ){}
 
     async createSat(dadosSat: CreateSatDto): Promise<SatEntity | null>{
@@ -57,16 +56,18 @@ export class SatService {
         await this.satRepository.delete(id)
     }
 
+    private readonly defaultRelations = ['representante', 'evidencias', 'avt', 'avt.laudo'] as const;
+
     async findOne(id: string): Promise<SatEntity | null>{
-        return await this.satRepository.findOneBy({ id: id })
+        return await this.satRepository.findOne({ where: { id }, relations: [...this.defaultRelations] })
     }
 
     async findAll(): Promise<SatEntity[] | null>{
-        return await this.satRepository.find()
+        return await this.satRepository.find({ relations: [...this.defaultRelations] })
     }
 
     async findSatsByLab(laboratorio: LaboratorioSatEnum): Promise<SatEntity[]>{
-        return await this.satRepository.findBy({ destino: laboratorio }) 
+        return await this.satRepository.find({ where: { destino: laboratorio }, relations: [...this.defaultRelations] })
     }
 
     async findSatsByRepresentante(representanteId: number): Promise<SatEntity[]>{
@@ -76,6 +77,20 @@ export class SatService {
             throw new BadRequestException('Usuário inválido ou não é representante');
         }
 
-        return await this.satRepository.findBy({ representante_id: representanteId });
+        return await this.satRepository.find({ where: { representante_id: representanteId }, relations: [...this.defaultRelations] });
+    }
+
+    async findSatsByStatus(statusSat: StatusSatEnum): Promise<SatEntity[]>{
+        return await this.satRepository.find({ where: { status: statusSat }, relations: [...this.defaultRelations] })
+    }
+
+    async changeStatus(id: string, status: StatusSatEnum): Promise<SatEntity | null>{
+        const sat = await this.findOne(id);
+        if (!sat) {
+            throw new BadRequestException('SAT não encontrada');
+        }
+        sat.status = status;
+        await this.satRepository.save(sat);
+        return await this.findOne(id);
     }
 }
