@@ -1,11 +1,15 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AvtEntity } from "./entity/avt.entity";
 import { AvtService } from "./avt.service";
+import { MailModule } from "../mail/mail.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([AvtEntity])],
+    imports: [
+        TypeOrmModule.forFeature([AvtEntity]),
+        forwardRef(() => MailModule),
+    ],
     providers: [AvtService],
     exports: [AvtService]
 })
-export class AvtModule{}
+export class AvtModule { }

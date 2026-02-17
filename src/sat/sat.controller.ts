@@ -1,4 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import type { UserFromToken } from "src/auth/decorators/current-user.decorator";
 import { SatService } from "./sat.service";
 import { CreateSatDto } from "./dto/create-sat.dto";
 import { UpdateSatDto } from "./dto/update-sat.dto";
@@ -20,7 +22,7 @@ import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 export class SatController {
     constructor(
         private satService: SatService
-    ){}
+    ) { }
 
     @Post()
     @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.REPRESENTANTE)
@@ -51,15 +53,6 @@ export class SatController {
     @ApiResponse({ status: 404, description: 'SAT não encontrada' })
     async deleteSat(@Param('id') id: string) {
         return await this.satService.delete(id);
-    }
-
-    @Get(':id')
-    @ApiOperation({ summary: 'Buscar SAT por ID', description: 'Retorna os dados de uma SAT específica' })
-    @ApiParam({ name: 'id', description: 'UUID da SAT' })
-    @ApiResponse({ status: 200, description: 'SAT encontrada', type: SatEntity })
-    @ApiResponse({ status: 404, description: 'SAT não encontrada' })
-    async findOneSat(@Param('id') id: string) {
-        return await this.satService.findOne(id);
     }
 
     @Get()
@@ -93,8 +86,17 @@ export class SatController {
         return await this.satService.findSatsByStatus(status);
     }
 
+    @Get(':id')
+    @ApiOperation({ summary: 'Buscar SAT por ID', description: 'Retorna os dados de uma SAT específica' })
+    @ApiParam({ name: 'id', description: 'UUID da SAT' })
+    @ApiResponse({ status: 200, description: 'SAT encontrada', type: SatEntity })
+    @ApiResponse({ status: 404, description: 'SAT não encontrada' })
+    async findOneSat(@Param('id') id: string) {
+        return await this.satService.findOne(id);
+    }
+
     @Patch(':id/status')
-    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE)
     @ApiOperation({ summary: 'Alterar status da SAT', description: 'Altera o status de uma SAT' })
     @ApiParam({ name: 'id', description: 'UUID da SAT' })
     @ApiBody({ schema: { type: 'object', properties: { status: { type: 'string', enum: Object.values(StatusSatEnum), description: 'Novo status da SAT' } }, required: ['status'] } })
@@ -111,8 +113,8 @@ export class SatController {
     @ApiBody({ type: CreateAvtDto })
     @ApiResponse({ status: 201, description: 'AVT criada com sucesso', type: AvtEntity })
     @ApiResponse({ status: 404, description: 'SAT não encontrada' })
-    async createAvt(@Param('id') id: string, @Body() dadosAvt: CreateAvtDto) {
-        return await this.satService.createAvt(id, dadosAvt);
+    async createAvt(@Param('id') id: string, @Body() dadosAvt: CreateAvtDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.createAvt(id, dadosAvt, user.id);
     }
 
     @Patch('avt/:id')

@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsString, IsArray, ArrayMinSize, Matches } from "class-validator";
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, ArrayMinSize, Matches } from "class-validator";
 import { StatusSatEnum } from "../enum/status-sat.enum";
 import { LaboratorioSatEnum } from "../enum/laboratorio-sat.enum";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
@@ -16,6 +16,7 @@ export class CreateSatDto {
 
     @ApiProperty({ description: 'Produto relacionado à SAT (1 produto por SAT)', example: 'Tinta Acrílica Premium' })
     @IsString()
+    @IsNotEmpty({ message: 'O produto é obrigatório' })
     produtos: string;
 
     @ApiProperty({ description: 'Quantidade do produto', example: 10 })

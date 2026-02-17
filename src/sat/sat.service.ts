@@ -41,8 +41,8 @@ export class SatService {
         return await this.satRepository.save(saved);
     }
 
-    async createAvt(id: string, dadosAvt: CreateAvtDto): Promise<AvtEntity> {
-        return await this.avtService.create(id, dadosAvt)
+    async createAvt(id: string, dadosAvt: CreateAvtDto, usuario_id: number): Promise<AvtEntity> {
+        return await this.avtService.create(id, dadosAvt, usuario_id)
     }
 
     async updateAvt(id: string, dadosAvt: UpdateAvtDto): Promise<AvtEntity> {

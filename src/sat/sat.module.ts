@@ -14,5 +14,6 @@ import { UsuarioModule } from "src/usuario/usuario.module";
     ],
     controllers: [SatController],
     providers: [SatService],
+    exports: [SatService],
 })
-export class SatModule{}
+export class SatModule { }

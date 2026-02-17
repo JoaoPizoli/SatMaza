@@ -1,12 +1,14 @@
-import { IsBoolean, IsDate, IsEnum, IsString } from "class-validator"
+import { IsBoolean, IsDate, IsEnum, IsOptional, IsString } from "class-validator"
+import { Type } from "class-transformer"
 import { StatusAvtEnum } from "../enum/status-avt.enum"
 import { ApiProperty } from "@nestjs/swagger"
 
 export class CreateAvtDto {
 
-    @ApiProperty({ description: 'ID da mídia/laudo associado', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+    @ApiProperty({ description: 'ID da mídia/laudo associado', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', required: false })
+    @IsOptional()
     @IsString()
-    media_id: string; 
+    media_id?: string | null;
 
     @ApiProperty({ description: 'Descrição da averiguação técnica', example: 'Produto analisado em laboratório' })
     @IsString()
@@ -37,6 +39,7 @@ export class CreateAvtDto {
     solucao: string;
 
     @ApiProperty({ description: 'Data da averiguação', example: '2026-01-15T00:00:00.000Z', type: Date })
+    @Type(() => Date)
     @IsDate()
     data: Date;
 

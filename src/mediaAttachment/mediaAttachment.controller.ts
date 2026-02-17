@@ -12,13 +12,13 @@ import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 export class MediaAttachmentController {
     constructor(
         private mediaAttachmentService: MediaAttachmentService,
-    ) {}
+    ) { }
 
     @Post('generate-sas')
     @ApiOperation({ summary: 'Gerar URL SAS', description: 'Gera uma URL SAS para upload de arquivo no Azure Blob Storage' })
     @ApiBody({ type: CreateMediaAttachmentDto })
     @ApiResponse({ status: 201, description: 'URL SAS gerada com sucesso', schema: { type: 'object', properties: { sasUrl: { type: 'string', description: 'URL SAS para upload' }, mediaId: { type: 'string', description: 'ID da mídia criada' } } } })
-    @ApiResponse({ status: 400, description: 'Dados inválidos' })
+    @ApiResponse({ status: 400, description: 'Dados inválidos ou tipo de arquivo não permitido' })
     async generateSasUrl(@Body() dto: CreateMediaAttachmentDto) {
         return await this.mediaAttachmentService.generateSasUrl(dto);
     }
@@ -30,6 +30,15 @@ export class MediaAttachmentController {
     @ApiResponse({ status: 404, description: 'Mídia não encontrada' })
     async confirmUpload(@Param('id') id: string) {
         return await this.mediaAttachmentService.confirmUpload(id);
+    }
+
+    @Get(':id/view')
+    @ApiOperation({ summary: 'Gerar URL de visualização', description: 'Gera uma URL SAS de leitura para visualizar/baixar o arquivo' })
+    @ApiParam({ name: 'id', description: 'UUID da mídia' })
+    @ApiResponse({ status: 200, description: 'URL de visualização gerada', schema: { type: 'object', properties: { viewUrl: { type: 'string', description: 'URL SAS para leitura do arquivo' } } } })
+    @ApiResponse({ status: 400, description: 'Mídia não encontrada ou upload não confirmado' })
+    async getViewUrl(@Param('id') id: string) {
+        return await this.mediaAttachmentService.generateReadSasUrl(id);
     }
 
     @Get('sat/:satId')
