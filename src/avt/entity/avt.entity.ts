@@ -30,7 +30,7 @@ export class AvtEntity {
     possiveis_causas: string;
 
     @ApiProperty({ description: 'Laudo/mídia associada', type: () => MediaAttachmentEntity, nullable: true })
-    @OneToOne(() => MediaAttachmentEntity, { onDelete: 'RESTRICT', nullable: true })
+    @OneToOne(() => MediaAttachmentEntity, { onDelete: 'RESTRICT', nullable: true, eager: true })
     @JoinColumn({ name: 'media_id' })
     laudo: MediaAttachmentEntity;
 
