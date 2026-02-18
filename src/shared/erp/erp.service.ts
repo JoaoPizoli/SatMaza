@@ -14,13 +14,13 @@ export class ErpService {
 
         if (busca && busca.trim()) {
             return await this.erpDataSource.query(
-                "SELECT CODCLI, NOMCLI, CODREP, NOMREP, CIDADE FROM VW_CLIENTES_ATIVOS WHERE (NOMCLI LIKE ? OR CODCLI LIKE ?) AND CODREP = ? LIMIT 50",
+                "SELECT CODCLI, NOMCLI, CODREP, NOMREP, CIDADE, UF FROM VW_CLIENTES_ATIVOS WHERE (NOMCLI LIKE ? OR CODCLI LIKE ?) AND CODREP = ? LIMIT 50",
                 [`%${busca}%`, `%${busca}%`, repreIdStr],
             );
         }
 
         return await this.erpDataSource.query(
-            "SELECT CODCLI, NOMCLI, CODREP, NOMREP, CIDADE FROM VW_CLIENTES_ATIVOS WHERE CODREP = ? LIMIT 50",
+            "SELECT CODCLI, NOMCLI, CODREP, NOMREP, CIDADE, UF FROM VW_CLIENTES_ATIVOS WHERE CODREP = ? LIMIT 50",
             [repreIdStr],
         );
     }
