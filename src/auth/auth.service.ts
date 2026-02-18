@@ -20,7 +20,7 @@ export class AuthService {
         private usuarioService: UsuarioService,
         private jwtService: JwtService,
         private tokenBlacklistService: TokenBlacklistService,
-    ) {}
+    ) { }
 
     async login(dto: LoginDto): Promise<{ access_token: string }> {
         let usuario: UsuarioEntity | null = null;
@@ -54,8 +54,13 @@ export class AuthService {
             usuario: usuario.usuario
         };
 
+        const pending_setup = usuario.tipo === TipoUsuarioEnum.REPRESENTANTE &&
+            (!usuario.nome || !usuario.email || !usuario.password_changed);
+
         return {
             access_token: this.jwtService.sign(payload),
+            // @ts-ignore
+            pending_setup
         };
     }
 

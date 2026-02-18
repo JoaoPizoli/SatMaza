@@ -164,14 +164,16 @@ export class SatService {
         qb.leftJoin('sat.representante', 'representante');
         this.applyFilters(qb, filter);
 
-        qb.select('representante.usuario', 'name')
+        qb.select('representante.usuario', 'usuario')
+            .addSelect('representante.nome', 'nome')
             .addSelect('COUNT(sat.id)', 'value')
             .groupBy('representante.usuario')
+            .addGroupBy('representante.nome')
             .orderBy('value', 'DESC');
 
         const result = await qb.getRawMany();
         return result.map(item => ({
-            name: item.name || 'Desconhecido',
+            name: item.nome ? `${item.usuario} - ${item.nome}` : item.usuario || 'Desconhecido',
             value: Number(item.value)
         }));
     }

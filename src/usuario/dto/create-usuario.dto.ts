@@ -13,6 +13,11 @@ export class CreateUsuarioDto {
     @IsOptional()
     email?: string;
 
+    @ApiPropertyOptional({ description: 'Nome do usuário', example: 'João Pedro' })
+    @IsString()
+    @IsOptional()
+    nome?: string;
+
     @ApiProperty({ description: 'Senha do usuário', example: 'senha123' })
     @IsString()
     senha: string;

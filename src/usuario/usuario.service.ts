@@ -56,4 +56,21 @@ export class UsuarioService {
     async findRepresentantes(): Promise<UsuarioEntity[]> {
         return await this.usuarioRepository.find({ where: { tipo: TipoUsuarioEnum.REPRESENTANTE } });
     }
+
+    async completeRegistration(id: number, dados: { nome: string; email: string; senha?: string }): Promise<UsuarioEntity> {
+        const updateData: Partial<UsuarioEntity> = {
+            nome: dados.nome,
+            email: dados.email,
+            password_changed: true,
+        };
+
+        if (dados.senha) {
+            const salt = await bcrypt.genSalt(10);
+            updateData.senha = await bcrypt.hash(dados.senha, salt);
+        }
+
+        await this.usuarioRepository.update(id, updateData);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return (await this.findOne(id))!;
+    }
 }

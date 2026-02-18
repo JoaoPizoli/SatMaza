@@ -33,4 +33,13 @@ export class UsuarioEntity {
     @ApiProperty({ description: 'Data de criação do usuário' })
     @CreateDateColumn()
     createdAt: Date;
+
+    @ApiProperty({ description: 'Nome do usuário', example: 'João Pedro', nullable: true })
+    @Column({ nullable: true })
+    nome?: string;
+
+    @ApiHideProperty()
+    @Column({ default: false })
+    @Exclude() // Mantemos exclude para não vazar, mas precisamos verificar internamente
+    password_changed: boolean;
 }

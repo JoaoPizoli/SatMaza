@@ -7,6 +7,9 @@ import { UsuarioEntity } from "./entity/usuario.entity";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { Public } from "src/auth/decorators/public.decorator";
 import { TipoUsuarioEnum } from "./enum/tipo-usuario.enum";
+import { CompleteRegistrationDto } from "./dto/complete-registration.dto";
+import { CurrentUser } from "src/auth/decorators/current-user.decorator";
+import type { UserFromToken } from "src/auth/decorators/current-user.decorator";
 
 @ApiTags('Usuário')
 @ApiBearerAuth('access-token')
@@ -92,5 +95,13 @@ export class UsuarioController {
     @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
     async findByUsuario(@Param('usuario') usuario: string) {
         return await this.usuarioService.findByUsuario(usuario);
+    }
+
+    @Post('complete-registration')
+    @ApiOperation({ summary: 'Completar cadastro', description: 'Permite que o usuário complete seu cadastro (nome, email, senha)' })
+    @ApiBody({ type: CompleteRegistrationDto })
+    @ApiResponse({ status: 200, description: 'Cadastro completado com sucesso', type: UsuarioEntity })
+    async completeRegistration(@Body() dados: CompleteRegistrationDto, @CurrentUser() user: UserFromToken) {
+        return await this.usuarioService.completeRegistration(user.id, dados);
     }
 } 
