@@ -28,7 +28,7 @@ export class AuthService {
         if (dto.email) {
             usuario = await this.usuarioService.findByEmail(dto.email);
 
-            if (!usuario || ![TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE].includes(usuario.tipo)) {
+            if (!usuario || ![TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE, TipoUsuarioEnum.ORQUESTRADOR].includes(usuario.tipo)) {
                 throw new UnauthorizedException("Credenciais inválidas");
             }
         } else if (dto.usuario) {
