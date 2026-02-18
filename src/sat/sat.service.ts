@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, Inject, forwardRef } from "@nestjs/common";
 import { SatEntity } from "./entity/sat.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -13,10 +13,7 @@ import { LaboratorioSatEnum } from "./enum/laboratorio-sat.enum";
 import { UsuarioService } from "src/usuario/usuario.service";
 import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 import { UpdateSatDto } from "./dto/update-sat.dto";
-import { GraphMailService } from "src/mail/graph-mail.service";
-import { ConfigService } from "@nestjs/config";
-import { SatPdfService } from "src/mail/sat-pdf.service";
-
+import { SatNotificationService } from "src/mail/sat-notification.service";
 
 @Injectable()
 export class SatService {
@@ -25,8 +22,8 @@ export class SatService {
         private satRepository: Repository<SatEntity>,
         private usuarioService: UsuarioService,
         private avtService: AvtService,
-        private mailService: GraphMailService,
-        private satPdfService: SatPdfService,
+        @Inject(forwardRef(() => SatNotificationService))
+        private readonly satNotificationService: SatNotificationService,
     ) { }
 
     async createSat(dadosSat: CreateSatDto): Promise<SatEntity | null> {
@@ -108,7 +105,7 @@ export class SatService {
         return await this.findOne(id);
     }
 
-    async redirecionar(id: string): Promise<SatEntity> {
+    async redirecionar(id: string, cc: string[] = []): Promise<SatEntity> {
         const sat = await this.findOne(id);
         if (!sat) {
             throw new BadRequestException('SAT não encontrada');
@@ -134,46 +131,7 @@ export class SatService {
         await this.satRepository.save(sat);
 
         // Enviar email notificando redirecionamento
-        if (sat.representante?.email) {
-            const emailDestino = process.env.MAIL_DESTINO_REDIRECIONAMENTO; // Email definido pelo usuário (preciso adicionar ao env ou chumbar se ele der)
-            // O user disse: "enviar um email automaticamente para um email que eu definir" -> vou assumir que posso usar uma variavel de ambiente ou um fixo por enquanto.
-            // Vou usar uma variavel ficticia ou enviar para o proprio representante + um email fixo de admin/lab se tiver.
-            // O user disse "siga o mesmo padrao de envio de email já existente".
-
-            // Vou montar o corpo do email
-            const html = `
-                <h3>SAT Redirecionada</h3>
-                <p>A SAT <strong>${sat.codigo}</strong> foi redirecionada para o laboratório: <strong>${novoDestino}</strong>.</p>
-                <p><strong>Redirecionado por:</strong> ${sat.destino === LaboratorioSatEnum.BASE_AGUA ? 'Base Solvente' : 'Base Água'}</p>
-                <br/>
-                <h4>Detalhes da SAT:</h4>
-                <p><strong>Cliente:</strong> ${sat.cliente}</p>
-                <p><strong>Produto:</strong> ${sat.produtos}</p>
-                <p><strong>Reclamação:</strong> ${sat.reclamacao}</p>
-             `;
-
-            // Enviar para um email definido (vou colocar um placeholder no .env ou usar um hardcoded se nao tiver info).
-            // Vou assumir que o email de destino é algo como "lab.maza@..." ou o email do usuario logado? 
-            // "enviar um email automaticamente para um email que eu definir" -> O user nao definiu qual é. Vou usar process.env.MAIL_NOTIFICACAO_SAT
-
-            const emailNotificacao = process.env.MAIL_NOTIFICACAO_SAT || 'sac@maza.com.br'; // Fallback
-
-            try {
-                // Gerar PDF da SAT
-                const pdfBuffer = await this.satPdfService.generatePdf(sat);
-
-                await this.mailService.sendWithPdfAttachment({
-                    to: [emailNotificacao],
-                    subject: `SAT Redirecionada: ${sat.codigo}`,
-                    html,
-                    pdfBuffer,
-                    attachmentName: `SAT-${sat.codigo}.pdf`,
-                });
-            } catch (error) {
-                console.error('Erro ao enviar email de redirecionamento:', error);
-                // Não falhar o redirecionamento se o email falhar?
-            }
-        }
+        this.satNotificationService.notifyRedirection(sat, cc);
 
         return sat;
     }

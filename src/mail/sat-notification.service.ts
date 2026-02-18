@@ -148,4 +148,46 @@ export class SatNotificationService {
             // Não re-lançar — fire-and-forget
         }
     }
+
+    /**
+     * Notifica o redirecionamento da SAT para outro laboratório.
+     */
+    async notifyRedirection(sat: SatEntity, cc: string[] = []): Promise<void> {
+        // Enviar email notificando redirecionamento
+        if (sat.representante?.email) {
+
+            const emailNotificacao = process.env.MAIL_NOTIFICACAO_SAT || 'ti@maza.com.br';
+            const destinoTexto = sat.destino;
+            const origemTexto = sat.destino === 'BASE_AGUA' ? 'Base Solvente' : 'Base Água'; // Assumption logic based on enum values usually matching
+
+            const html = `
+                <h3>SAT Redirecionada</h3>
+                <p>A SAT <strong>${sat.codigo}</strong> foi redirecionada para o laboratório: <strong>${destinoTexto}</strong>.</p>
+                <p><strong>Redirecionado por:</strong> ${origemTexto}</p>
+                <br/>
+                <h4>Detalhes da SAT:</h4>
+                <p><strong>Cliente:</strong> ${sat.cliente}</p>
+                <p><strong>Produto:</strong> ${sat.produtos}</p>
+                <p><strong>Reclamação:</strong> ${sat.reclamacao}</p>
+             `;
+
+            try {
+                // Gerar PDF da SAT
+                const pdfBuffer = await this.satPdfService.generatePdf(sat);
+
+                await this.graphMailService.sendWithPdfAttachment({
+                    to: [emailNotificacao],
+                    cc: ['joao.carvalho@maza.com.br'],
+                    subject: `SAT Redirecionada: ${sat.codigo}`,
+                    html,
+                    pdfBuffer,
+                    attachmentName: `SAT-${sat.codigo}.pdf`,
+                });
+
+                this.logger.log(`Email de redirecionamento enviado para ${emailNotificacao} - SAT ${sat.codigo}`);
+            } catch (error) {
+                this.logger.error(`Erro ao enviar email de redirecionamento para SAT ${sat.codigo}:`, error);
+            }
+        }
+    }
 }
