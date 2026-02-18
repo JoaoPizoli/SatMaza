@@ -152,7 +152,7 @@ export class SatNotificationService {
     /**
      * Notifica o redirecionamento da SAT para outro laboratório.
      */
-    async notifyRedirection(sat: SatEntity, cc: string[] = []): Promise<void> {
+    async notifyRedirection(sat: SatEntity): Promise<void> {
         // Enviar email notificando redirecionamento
         if (sat.representante?.email) {
 

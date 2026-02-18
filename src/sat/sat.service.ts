@@ -105,7 +105,7 @@ export class SatService {
         return await this.findOne(id);
     }
 
-    async redirecionar(id: string, cc: string[] = []): Promise<SatEntity> {
+    async redirecionar(id: string): Promise<SatEntity> {
         const sat = await this.findOne(id);
         if (!sat) {
             throw new BadRequestException('SAT não encontrada');
@@ -131,7 +131,7 @@ export class SatService {
         await this.satRepository.save(sat);
 
         // Enviar email notificando redirecionamento
-        this.satNotificationService.notifyRedirection(sat, cc);
+        this.satNotificationService.notifyRedirection(sat);
 
         return sat;
     }

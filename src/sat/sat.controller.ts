@@ -110,11 +110,10 @@ export class SatController {
     @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE)
     @ApiOperation({ summary: 'Redirecionar SAT', description: 'Redireciona a SAT para o outro laboratório' })
     @ApiParam({ name: 'id', description: 'UUID da SAT' })
-    @ApiBody({ schema: { type: 'object', properties: { cc: { type: 'array', items: { type: 'string' }, description: 'Lista de emails em cópia' } } } })
     @ApiResponse({ status: 200, description: 'SAT redirecionada com sucesso', type: SatEntity })
     @ApiResponse({ status: 400, description: 'Erro ao redirecionar' })
-    async redirecionarSat(@Param('id') id: string, @Body() body: { cc?: string[] }) {
-        const sat = await this.satService.redirecionar(id, body.cc);
+    async redirecionarSat(@Param('id') id: string) {
+        const sat = await this.satService.redirecionar(id);
         return sat;
     }
 
