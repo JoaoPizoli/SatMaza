@@ -32,7 +32,7 @@ function buildMsgProcedente(sat: SatEntity): string {
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cliente:</td><td style="padding: 4px 0;"><strong>${sat.cliente}</strong></td></tr>
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cidade:</td><td style="padding: 4px 0;">${sat.cidade}</td></tr>
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Produto:</td><td style="padding: 4px 0;">${sat.produtos}</td></tr>
-        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${sat.lotes?.join(', ') ?? '—'}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${sat.lotes?.map(l => l.lote).join(', ') ?? '—'}</td></tr>
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantidade:</td><td style="padding: 4px 0;">${sat.quantidade}</td></tr>
       </table>
 
@@ -64,7 +64,7 @@ function buildMsgImprocedente(sat: SatEntity): string {
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cliente:</td><td style="padding: 4px 0;"><strong>${sat.cliente}</strong></td></tr>
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cidade:</td><td style="padding: 4px 0;">${sat.cidade}</td></tr>
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Produto:</td><td style="padding: 4px 0;">${sat.produtos}</td></tr>
-        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${sat.lotes?.join(', ') ?? '—'}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${sat.lotes?.map(l => l.lote).join(', ') ?? '—'}</td></tr>
         <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantidade:</td><td style="padding: 4px 0;">${sat.quantidade}</td></tr>
       </table>
 
