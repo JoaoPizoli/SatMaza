@@ -219,6 +219,21 @@ export class SatService {
         if (filter.representanteId) {
             qb.andWhere('sat.representante_id = :representanteId', { representanteId: filter.representanteId });
         }
+        if (filter.representanteCodigo) {
+            // Precisamos garantir que o join foi feito se não tiver sido feito ainda
+            // Para simplificar, assumimos que 'representante' é o alias para a relação sat.representante
+            // Como applyFilters é usado em contextos onde o join pode ou não existir, idealmente verifica-se.
+            // Mas como getSatsBySector não faz join, vamos fazer subquery ou left join condicional?
+            // Melhor: adicionar o join se não existir no main query builder, mas applyFilters recebe qb.
+
+            // Check if alias 'representante' is already used, if not, join.
+            const alias = qb.expressionMap.aliases.find((a: any) => a.name === 'representante');
+            if (!alias) {
+                qb.leftJoin('sat.representante', 'representante');
+            }
+
+            qb.andWhere('representante.usuario = :codRep', { codRep: filter.representanteCodigo });
+        }
         if (filter.produto) {
             qb.andWhere('sat.produtos ILIKE :produto', { produto: `%${filter.produto}%` });
         }

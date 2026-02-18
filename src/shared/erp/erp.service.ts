@@ -36,6 +36,19 @@ export class ErpService {
         return rows.length > 0 ? rows[0] : null;
     }
 
+    async listarRepresentantes(busca?: string): Promise<any[]> {
+        if (busca && busca.trim()) {
+            return await this.erpDataSource.query(
+                "SELECT DISTINCT CODREP, NOMREP FROM VW_CLIENTES_ATIVOS WHERE NOMREP LIKE ? OR CODREP LIKE ? LIMIT 50",
+                [`%${busca}%`, `%${busca}%`],
+            );
+        }
+
+        return await this.erpDataSource.query(
+            "SELECT DISTINCT CODREP, NOMREP FROM VW_CLIENTES_ATIVOS LIMIT 50",
+        );
+    }
+
     async buscarProdutos(busca?: string): Promise<any[]> {
         if (busca && busca.trim()) {
             return await this.erpDataSource.query(

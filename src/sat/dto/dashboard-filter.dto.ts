@@ -20,5 +20,9 @@ export class DashboardFilterDto {
     @ApiProperty({ description: 'Nome do produto para filtro parcial', required: false })
     @IsOptional()
     @IsString()
+    representanteCodigo?: string;
+
+    @IsOptional()
+    @IsString()
     produto?: string;
 }

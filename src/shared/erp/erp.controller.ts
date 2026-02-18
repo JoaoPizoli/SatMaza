@@ -42,5 +42,14 @@ export class ErpController {
         return await this.erpService.buscarRepresentante(repreId);
     }
 
+    @Get('representantes')
+    @ApiOperation({ summary: 'Listar Representantes', description: 'Retorna a lista de representantes do ERP' })
+    @ApiQuery({ name: 'busca', required: false, description: 'Termo de busca para filtrar representantes', example: 'João' })
+    @ApiResponse({ status: 200, description: 'Lista de representantes retornada com sucesso' })
+    @ApiResponse({ status: 401, description: 'Não autenticado' })
+    async listarRepresentantes(@Query('busca') busca?: string) {
+        return await this.erpService.listarRepresentantes(busca);
+    }
+
 
 }
