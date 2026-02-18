@@ -16,6 +16,11 @@ import { UpdateSatDto } from "./dto/update-sat.dto";
 import { SatNotificationService } from "src/mail/sat-notification.service";
 import { DashboardFilterDto } from "./dto/dashboard-filter.dto";
 
+const SAT_DESTINO_LABELS = {
+    [LaboratorioSatEnum.BASE_AGUA]: 'Base Água',
+    [LaboratorioSatEnum.BASE_SOLVENTE]: 'Base Solvente',
+};
+
 @Injectable()
 export class SatService {
     constructor(
@@ -146,9 +151,9 @@ export class SatService {
             .groupBy('sat.destino');
 
         const result = await qb.getRawMany();
-        // Mapear null/undefined para 'Não Definido' ou similar se necessário
+
         return result.map(item => ({
-            name: item.name || 'NÃO DEFINIDO',
+            name: SAT_DESTINO_LABELS[item.name] || 'Não Definido',
             value: Number(item.value)
         }));
     }
