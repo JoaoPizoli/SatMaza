@@ -193,6 +193,21 @@ export class SatService {
         }));
     }
 
+    async getSatsByStatus(filter: DashboardFilterDto) {
+        const qb = this.satRepository.createQueryBuilder('sat');
+        this.applyFilters(qb, filter);
+
+        qb.select('sat.status', 'name')
+            .addSelect('COUNT(sat.id)', 'value')
+            .groupBy('sat.status');
+
+        const result = await qb.getRawMany();
+        return result.map(item => ({
+            name: item.name,
+            value: Number(item.value)
+        }));
+    }
+
     private applyFilters(qb: any, filter: DashboardFilterDto) {
         if (filter.startDate) {
             qb.andWhere('sat.createdAt >= :startDate', { startDate: filter.startDate });

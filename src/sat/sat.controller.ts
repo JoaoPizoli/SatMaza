@@ -86,6 +86,14 @@ export class SatController {
         return await this.satService.getTopProducts(filter);
     }
 
+    @Get('dashboard/status')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @ApiOperation({ summary: 'SATs por Status', description: 'Retorna estatísticas de SATs por status' })
+    @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
+    async getSatsByStatus(@Query() filter: DashboardFilterDto) {
+        return await this.satService.getSatsByStatus(filter);
+    }
+
     @Get('laboratorio/:laboratorio')
     @ApiOperation({ summary: 'Buscar SATs por laboratório', description: 'Retorna as SATs destinadas a um laboratório específico' })
     @ApiParam({ name: 'laboratorio', description: 'Laboratório de destino', enum: LaboratorioSatEnum })
