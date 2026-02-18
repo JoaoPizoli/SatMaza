@@ -36,7 +36,8 @@ export class AvtService {
             sat_id: sat_id,
             usuario_id: usuario_id,
         })
-        return await this.avtRepository.save(entity)
+        const saved = await this.avtRepository.save(entity)
+        return await this.findOne(saved.id)
     }
 
 
@@ -49,7 +50,7 @@ export class AvtService {
 
     // Busca por ID da AVT
     async findOne(id: string): Promise<AvtEntity> {
-        const avt = await this.avtRepository.findOneBy({ id: id })
+        const avt = await this.avtRepository.findOne({ where: { id: id }, relations: ['laudo'] })
         if (!avt) {
             throw new NotFoundException(`AVT com id: '${id}' não encontrada`)
         }
@@ -58,7 +59,7 @@ export class AvtService {
 
     // Busca por SAT ID
     async findBySatId(sat_id: string): Promise<AvtEntity> {
-        const avt = await this.avtRepository.findOneBy({ sat_id: sat_id })
+        const avt = await this.avtRepository.findOne({ where: { sat_id: sat_id }, relations: ['laudo'] })
         if (!avt) {
             throw new NotFoundException(`AVT por sat_id: '${sat_id}' não encontrada`)
         }
