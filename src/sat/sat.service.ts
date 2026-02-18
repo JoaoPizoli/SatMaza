@@ -147,6 +147,7 @@ export class SatService {
         this.applyFilters(qb, filter);
 
         qb.select('sat.destino', 'name')
+            .andWhere('sat.destino IS NOT NULL')
             .addSelect('COUNT(sat.id)', 'value')
             .groupBy('sat.destino');
 
