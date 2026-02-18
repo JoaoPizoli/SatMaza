@@ -106,6 +106,22 @@ export class SatController {
         return await this.satService.changeStatus(id, status);
     }
 
+    @Patch(':id/redirecionar')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE)
+    @ApiOperation({ summary: 'Redirecionar SAT', description: 'Redireciona a SAT para o outro laboratório' })
+    @ApiParam({ name: 'id', description: 'UUID da SAT' })
+    @ApiResponse({ status: 200, description: 'SAT redirecionada com sucesso', type: SatEntity })
+    @ApiResponse({ status: 400, description: 'Erro ao redirecionar' })
+    async redirecionarSat(@Param('id') id: string) {
+        const sat = await this.satService.redirecionar(id);
+
+        // Email logic should best be here or service. I'll put in service to keep controller clean, 
+        // but since I left a TODO in service, let's actually inject MailService in Service and do it there.
+        // Re-reading service code... I need to inject GraphMailService in SatService.
+
+        return sat;
+    }
+
     @Post(':id/avt')
     @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE)
     @ApiOperation({ summary: 'Criar AVT para uma SAT', description: 'Cria uma Averiguação Técnica vinculada a uma SAT' })

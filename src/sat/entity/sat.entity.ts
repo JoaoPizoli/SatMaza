@@ -3,17 +3,18 @@ import { LaboratorioSatEnum } from "../enum/laboratorio-sat.enum";
 import { StatusSatEnum } from "../enum/status-sat.enum";
 import { UsuarioEntity } from "../../usuario/entity/usuario.entity";
 import { MediaAttachmentEntity } from "../../mediaAttachment/entity/mediaAttachment.entity";
+import { SatLoteEntity } from "./sat-lote.entity";
 import { AvtEntity } from "../../avt/entity/avt.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
-@Entity({ name: 'sat'})
+@Entity({ name: 'sat' })
 export class SatEntity {
     @ApiProperty({ description: 'ID único da SAT (UUID)', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
     @PrimaryGeneratedColumn('uuid')
     id: string
 
     @ApiProperty({ description: 'Número sequencial da SAT', example: 1 })
-    @Column({ type: 'int'})
+    @Column({ type: 'int' })
     @Generated('increment')
     seq: number;
 
@@ -38,20 +39,16 @@ export class SatEntity {
     @Column()
     quantidade: number;
 
-    @ApiProperty({ description: 'Lista de lotes (formato: 000000-000)', type: [String], example: ['241001-001'] })
-    @Column('simple-array')
-    lotes: string[];
-
-    @ApiProperty({ description: 'Validade do produto', example: '2026-12-31' })
-    @Column()
-    validade: string;
+    @ApiProperty({ description: 'Lista de lotes e suas validades', type: () => [SatLoteEntity] })
+    @OneToMany(() => SatLoteEntity, (satLote) => satLote.sat, { cascade: true, eager: true })
+    lotes: SatLoteEntity[];
 
     @ApiProperty({ description: 'Nome do contato', example: 'João Silva' })
     @Column()
     contato: string;
 
     @ApiProperty({ description: 'Representante responsável', type: () => UsuarioEntity })
-    @ManyToOne(()=> UsuarioEntity)
+    @ManyToOne(() => UsuarioEntity)
     @JoinColumn({ name: 'representante_id' })
     representante: UsuarioEntity;
 

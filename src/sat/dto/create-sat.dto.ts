@@ -23,16 +23,21 @@ export class CreateSatDto {
     @IsNumber()
     quantidade: number;
 
-    @ApiProperty({ description: 'Lista de lotes no formato 000000-000', type: [String], example: ['241001-001', '241001-002'] })
+    @ApiProperty({
+        description: 'Lista de lotes e suas respectivas validades',
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                lote: { type: 'string', example: '241001-001' },
+                validade: { type: 'string', example: '2026-12-31' }
+            }
+        },
+        example: [{ lote: '241001-001', validade: '2026-12-31' }]
+    })
     @IsArray()
     @ArrayMinSize(1, { message: 'Pelo menos um lote é obrigatório' })
-    @IsString({ each: true })
-    @Matches(/^\d{6}-\d{3}$/, { each: true, message: 'Formato do lote deve ser 000000-000' })
-    lotes: string[];
-
-    @ApiProperty({ description: 'Data de validade do produto', example: '2026-12-31' })
-    @IsString()
-    validade: string;
+    lotes: { lote: string, validade: string }[];
 
     @ApiProperty({ description: 'Nome do contato', example: 'João Silva' })
     @IsString()
