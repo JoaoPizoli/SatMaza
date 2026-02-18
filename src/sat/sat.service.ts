@@ -15,6 +15,7 @@ import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 import { UpdateSatDto } from "./dto/update-sat.dto";
 import { GraphMailService } from "src/mail/graph-mail.service";
 import { ConfigService } from "@nestjs/config";
+import { SatPdfService } from "src/mail/sat-pdf.service";
 
 
 @Injectable()
@@ -25,6 +26,7 @@ export class SatService {
         private usuarioService: UsuarioService,
         private avtService: AvtService,
         private mailService: GraphMailService,
+        private satPdfService: SatPdfService,
     ) { }
 
     async createSat(dadosSat: CreateSatDto): Promise<SatEntity | null> {
@@ -157,12 +159,15 @@ export class SatService {
             const emailNotificacao = process.env.MAIL_NOTIFICACAO_SAT || 'sac@maza.com.br'; // Fallback
 
             try {
+                // Gerar PDF da SAT
+                const pdfBuffer = await this.satPdfService.generatePdf(sat);
+
                 await this.mailService.sendWithPdfAttachment({
                     to: [emailNotificacao],
                     subject: `SAT Redirecionada: ${sat.codigo}`,
                     html,
-                    // Sem anexo por enquanto, ou se quiser o PDF da SAT (nao tenho gerador de PDF da SAT aqui facil, so da AVT)
-                    // O requisito diz "tenha as informações da SAT junto", o HTML acima cobre isso.
+                    pdfBuffer,
+                    attachmentName: `SAT-${sat.codigo}.pdf`,
                 });
             } catch (error) {
                 console.error('Erro ao enviar email de redirecionamento:', error);
