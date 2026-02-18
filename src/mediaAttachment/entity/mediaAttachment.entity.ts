@@ -4,7 +4,7 @@ import { SatEntity } from "../../sat/entity/sat.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
 
-@Entity({ name: 'midia_attachment'})
+@Entity({ name: 'midia_attachment' })
 export class MediaAttachmentEntity {
     @ApiProperty({ description: 'ID da mídia (UUID)', example: 'c3d4e5f6-a7b8-9012-cdef-123456789012' })
     @PrimaryColumn('uuid')
@@ -42,6 +42,14 @@ export class MediaAttachmentEntity {
         default: StatusMediaEnum.PENDING,
     })
     status: StatusMediaEnum;
+
+    @ApiProperty({ description: 'Contexto do upload: evidência da SAT ou laudo da AVT', enum: ['sat_evidencia', 'avt_laudo'], example: 'sat_evidencia' })
+    @Column({
+        type: 'varchar',
+        length: 20,
+        default: 'sat_evidencia',
+    })
+    context: 'sat_evidencia' | 'avt_laudo';
 
     @ApiProperty({ description: 'Data de criação do registro' })
     @CreateDateColumn()

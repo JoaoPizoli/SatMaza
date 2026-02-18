@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { MediaAttachmentService } from "./mediaAttachment.service";
 import { CreateMediaAttachmentDto } from "./dto/create-mediaAttachment.dto";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
@@ -45,8 +45,11 @@ export class MediaAttachmentController {
     @ApiOperation({ summary: 'Buscar mídias por SAT', description: 'Retorna todas as mídias associadas a uma SAT' })
     @ApiParam({ name: 'satId', description: 'UUID da SAT' })
     @ApiResponse({ status: 200, description: 'Lista de mídias da SAT', type: [MediaAttachmentEntity] })
-    async findBySat(@Param('satId') satId: string) {
-        return await this.mediaAttachmentService.findBySat(satId);
+    async findBySat(
+        @Param('satId') satId: string,
+        @Query('context') context?: 'sat_evidencia' | 'avt_laudo',
+    ) {
+        return await this.mediaAttachmentService.findBySat(satId, context);
     }
 
     @Get(':id')

@@ -1,25 +1,15 @@
-import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions.js";
-import { DataSource } from "typeorm";
-import { config } from "dotenv";
+import { DataSource } from 'typeorm';
+import * as dotenv from 'dotenv';
 
-// Carrega variáveis de ambiente do .env
-config();
+dotenv.config();
 
-const ormConfig: PostgresConnectionOptions = {
+export default new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_DATABASE,
-    entities: [__dirname + '/../**/*.entity.{ts,js}'],
-    migrationsTableName: 'migrations',
-    migrations: [__dirname + '/../migrations/**/*{.ts,.js}'],
-    synchronize: false,
-    logging: false,
-}
-
-const AppDataSource = new DataSource(ormConfig)
-
-export { AppDataSource }
-export default ormConfig
+    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+    migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+});

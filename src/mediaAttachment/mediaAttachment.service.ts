@@ -104,6 +104,7 @@ export class MediaAttachmentService {
             sizeBytes: dto.sizeBytes,
             originalName: dto.originalName,
             status: StatusMediaEnum.PENDING,
+            context: dto.context,
         });
         await this.mediaRepository.save(media);
 
@@ -165,8 +166,12 @@ export class MediaAttachmentService {
         return await this.mediaRepository.findOneBy({ id });
     }
 
-    async findBySat(satId: string): Promise<MediaAttachmentEntity[]> {
-        return await this.mediaRepository.findBy({ sat_id: satId });
+    async findBySat(satId: string, context?: 'sat_evidencia' | 'avt_laudo'): Promise<MediaAttachmentEntity[]> {
+        const where: any = { sat_id: satId };
+        if (context) {
+            where.context = context;
+        }
+        return await this.mediaRepository.findBy(where);
     }
 
     // ── Exclusão ─────────────────────────────────────────────────────────────
