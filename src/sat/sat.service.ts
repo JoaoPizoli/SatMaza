@@ -14,6 +14,7 @@ import { UsuarioService } from "src/usuario/usuario.service";
 import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 import { UpdateSatDto } from "./dto/update-sat.dto";
 import { SatNotificationService } from "src/mail/sat-notification.service";
+import { DashboardFilterDto } from "./dto/dashboard-filter.dto";
 
 @Injectable()
 export class SatService {
@@ -134,5 +135,71 @@ export class SatService {
         this.satNotificationService.notifyRedirection(sat);
 
         return sat;
+    }
+
+    async getSatsBySector(filter: DashboardFilterDto) {
+        const qb = this.satRepository.createQueryBuilder('sat');
+        this.applyFilters(qb, filter);
+
+        qb.select('sat.destino', 'name')
+            .addSelect('COUNT(sat.id)', 'value')
+            .groupBy('sat.destino');
+
+        const result = await qb.getRawMany();
+        // Mapear null/undefined para 'Não Definido' ou similar se necessário
+        return result.map(item => ({
+            name: item.name || 'NÃO DEFINIDO',
+            value: Number(item.value)
+        }));
+    }
+
+    async getSatsByRepresentative(filter: DashboardFilterDto) {
+        const qb = this.satRepository.createQueryBuilder('sat');
+        this.applyFilters(qb, filter);
+        qb.leftJoin('sat.representante', 'representante');
+
+        qb.select('representante.usuario', 'name')
+            .addSelect('COUNT(sat.id)', 'value')
+            .groupBy('representante.usuario')
+            .orderBy('value', 'DESC');
+
+        const result = await qb.getRawMany();
+        return result.map(item => ({
+            name: item.name || 'Desconhecido',
+            value: Number(item.value)
+        }));
+    }
+
+    async getTopProducts(filter: DashboardFilterDto) {
+        const qb = this.satRepository.createQueryBuilder('sat');
+        this.applyFilters(qb, filter);
+
+        qb.select('sat.produtos', 'name')
+            .addSelect('COUNT(sat.id)', 'value')
+            .groupBy('sat.produtos')
+            .orderBy('value', 'DESC')
+            .limit(10); // Top 10
+
+        const result = await qb.getRawMany();
+        return result.map(item => ({
+            name: item.name,
+            value: Number(item.value)
+        }));
+    }
+
+    private applyFilters(qb: any, filter: DashboardFilterDto) {
+        if (filter.startDate) {
+            qb.andWhere('sat.createdAt >= :startDate', { startDate: filter.startDate });
+        }
+        if (filter.endDate) {
+            // Ajuste para incluir o final do dia
+            qb.andWhere('sat.createdAt <= :endDate', { endDate: `${filter.endDate} 23:59:59` });
+        }
+        if (filter.representanteId) {
+            qb.andWhere('sat.representante_id = :representanteId', { representanteId: filter.representanteId });
+        }
+        if (filter.produto) {
+            qb.andWhere('sat.produtos ILIKE :produto', { produto: `%${filter.produto}%` });
+        }
     }
 }

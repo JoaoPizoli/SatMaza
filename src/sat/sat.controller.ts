@@ -14,7 +14,7 @@ import { SatEntity } from "./entity/sat.entity";
 import { AvtEntity } from "src/avt/entity/avt.entity";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
-
+import { DashboardFilterDto } from "./dto/dashboard-filter.dto";
 
 @ApiTags('SAT')
 @ApiBearerAuth('access-token')
@@ -60,6 +60,30 @@ export class SatController {
     @ApiResponse({ status: 200, description: 'Lista de SATs', type: [SatEntity] })
     async findAllSat() {
         return await this.satService.findAll();
+    }
+
+    @Get('dashboard/sector')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @ApiOperation({ summary: 'SATs por Setor', description: 'Retorna estatísticas de SATs por setor' })
+    @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
+    async getSatsBySector(@Query() filter: DashboardFilterDto) {
+        return await this.satService.getSatsBySector(filter);
+    }
+
+    @Get('dashboard/representative')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @ApiOperation({ summary: 'SATs por Representante', description: 'Retorna estatísticas de SATs por representante' })
+    @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
+    async getSatsByRepresentative(@Query() filter: DashboardFilterDto) {
+        return await this.satService.getSatsByRepresentative(filter);
+    }
+
+    @Get('dashboard/products')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @ApiOperation({ summary: 'Top Produtos', description: 'Retorna os produtos com mais SATs' })
+    @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
+    async getTopProducts(@Query() filter: DashboardFilterDto) {
+        return await this.satService.getTopProducts(filter);
     }
 
     @Get('laboratorio/:laboratorio')

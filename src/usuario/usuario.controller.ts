@@ -14,7 +14,7 @@ import { TipoUsuarioEnum } from "./enum/tipo-usuario.enum";
 export class UsuarioController {
     constructor(
         private usuarioService: UsuarioService
-    ) {}
+    ) { }
 
     @Post()
     @Public() // TODO: Remover após criar usuário admin
@@ -54,6 +54,14 @@ export class UsuarioController {
     @ApiResponse({ status: 200, description: 'Lista de usuários', type: [UsuarioEntity] })
     async findAll() {
         return await this.usuarioService.findAll();
+    }
+
+    @Get('representantes')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @ApiOperation({ summary: 'Listar representantes', description: 'Retorna todos os representantes cadastrados' })
+    @ApiResponse({ status: 200, description: 'Lista de representantes', type: [UsuarioEntity] })
+    async findRepresentantes() {
+        return await this.usuarioService.findRepresentantes();
     }
 
     @Get(':id')
