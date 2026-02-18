@@ -161,8 +161,8 @@ export class SatService {
 
     async getSatsByRepresentative(filter: DashboardFilterDto) {
         const qb = this.satRepository.createQueryBuilder('sat');
-        this.applyFilters(qb, filter);
         qb.leftJoin('sat.representante', 'representante');
+        this.applyFilters(qb, filter);
 
         qb.select('representante.usuario', 'name')
             .addSelect('COUNT(sat.id)', 'value')
