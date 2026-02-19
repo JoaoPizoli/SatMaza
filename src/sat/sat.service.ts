@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Inject, forwardRef } from "@nestjs/common";
+import { BadRequestException, Injectable, Inject, forwardRef, Logger } from "@nestjs/common";
 import { SatEntity } from "./entity/sat.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -15,6 +15,7 @@ import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 import { UpdateSatDto } from "./dto/update-sat.dto";
 import { SatNotificationService } from "src/mail/sat-notification.service";
 import { DashboardFilterDto } from "./dto/dashboard-filter.dto";
+import { PaginationDto, PaginatedResult } from '../common/dto/pagination.dto';
 
 const SAT_DESTINO_LABELS = {
     [LaboratorioSatEnum.BASE_AGUA]: 'Base Água',
@@ -23,6 +24,8 @@ const SAT_DESTINO_LABELS = {
 
 @Injectable()
 export class SatService {
+    private readonly logger = new Logger(SatService.name);
+
     constructor(
         @InjectRepository(SatEntity)
         private satRepository: Repository<SatEntity>,
@@ -79,26 +82,73 @@ export class SatService {
         return await this.satRepository.findOne({ where: { id }, relations: [...this.defaultRelations] })
     }
 
-    async findAll(): Promise<SatEntity[] | null> {
-        return await this.satRepository.find({ relations: [...this.defaultRelations] })
+    async findAll(pagination?: PaginationDto): Promise<PaginatedResult<SatEntity>> {
+        const page = pagination?.page ?? 1;
+        const limit = pagination?.limit ?? 20;
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await this.satRepository.findAndCount({
+            relations: [...this.defaultRelations],
+            skip,
+            take: limit,
+            order: { createdAt: 'DESC' },
+        });
+
+        return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findSatsByLab(laboratorio: LaboratorioSatEnum): Promise<SatEntity[]> {
-        return await this.satRepository.find({ where: { destino: laboratorio }, relations: [...this.defaultRelations] })
+    async findSatsByLab(laboratorio: LaboratorioSatEnum, pagination?: PaginationDto): Promise<PaginatedResult<SatEntity>> {
+        const page = pagination?.page ?? 1;
+        const limit = pagination?.limit ?? 20;
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await this.satRepository.findAndCount({
+            where: { destino: laboratorio },
+            relations: [...this.defaultRelations],
+            skip,
+            take: limit,
+            order: { createdAt: 'DESC' },
+        });
+
+        return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findSatsByRepresentante(representanteId: number): Promise<SatEntity[]> {
+    async findSatsByRepresentante(representanteId: number, pagination?: PaginationDto): Promise<PaginatedResult<SatEntity>> {
         const usuario = await this.usuarioService.findOne(representanteId);
 
         if (!usuario || usuario.tipo !== TipoUsuarioEnum.REPRESENTANTE) {
             throw new BadRequestException('Usuário inválido ou não é representante');
         }
 
-        return await this.satRepository.find({ where: { representante_id: representanteId }, relations: [...this.defaultRelations] });
+        const page = pagination?.page ?? 1;
+        const limit = pagination?.limit ?? 20;
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await this.satRepository.findAndCount({
+            where: { representante_id: representanteId },
+            relations: [...this.defaultRelations],
+            skip,
+            take: limit,
+            order: { createdAt: 'DESC' },
+        });
+
+        return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findSatsByStatus(statusSat: StatusSatEnum): Promise<SatEntity[]> {
-        return await this.satRepository.find({ where: { status: statusSat }, relations: [...this.defaultRelations] })
+    async findSatsByStatus(statusSat: StatusSatEnum, pagination?: PaginationDto): Promise<PaginatedResult<SatEntity>> {
+        const page = pagination?.page ?? 1;
+        const limit = pagination?.limit ?? 20;
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await this.satRepository.findAndCount({
+            where: { status: statusSat },
+            relations: [...this.defaultRelations],
+            skip,
+            take: limit,
+            order: { createdAt: 'DESC' },
+        });
+
+        return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
     async changeStatus(id: string, status: StatusSatEnum): Promise<SatEntity | null> {
@@ -136,8 +186,13 @@ export class SatService {
 
         await this.satRepository.save(sat);
 
-        // Enviar email notificando redirecionamento
-        this.satNotificationService.notifyRedirection(sat);
+        // Enviar email notificando redirecionamento (fire-and-forget com log de falha)
+        this.satNotificationService.notifyRedirection(sat).catch((err) =>
+            this.logger.error(
+                `Falha na notificação de redirecionamento para SAT ${sat.codigo}: ${err.message}`,
+                err.stack,
+            ),
+        );
 
         return sat;
     }

@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  # ──────────────────────────────────────────────
+  # Banco de dados PostgreSQL
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: satmaza_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"   
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # API NestJS
+  # ──────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: satmaza_api
+    restart: unless-stopped
+    env_file: .env.production
+    ports:
+      - "127.0.0.1:3040:3040"   # Apenas localhost — Nginx faz o proxy externo
+    depends_on:
+      postgres:
+        condition: service_healthy  # Aguarda o banco estar pronto antes de subir
+
+volumes:
+  postgres_data:
+    driver: local

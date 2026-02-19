@@ -8,6 +8,7 @@ import { UsuarioModule } from './usuario/usuario.module';
 import { MediaAttachmentModule } from './mediaAttachment/mediaAttachment.module';
 import { AuthModule } from './auth/auth.module';
 import { ErpModule } from './shared/erp/erp.module';
+import { HealthModule } from './health/health.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -30,7 +31,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
         password: configService.get('DB_PASS'),
         database: configService.get('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
+        synchronize: process.env.NODE_ENV !== 'production', 
         autoLoadEntities: true,
       }),
     }),
@@ -52,6 +53,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     MediaAttachmentModule,
     AuthModule,
     ErpModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [

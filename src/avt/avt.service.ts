@@ -42,7 +42,7 @@ export class AvtService {
 
 
     async update(id: string, dadosAvt: UpdateAvtDto): Promise<AvtEntity> {
-        console.log(`[AvtService.update] ID: ${id}`, JSON.stringify(dadosAvt)); // DEBUG
+        this.logger.debug(`Atualizando AVT ID: ${id} — dados: ${JSON.stringify(dadosAvt)}`);
         const avt = await this.findOne(id)
         await this.avtRepository.update(id, dadosAvt)
         return await this.findOne(id)

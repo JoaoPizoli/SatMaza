@@ -1,98 +1,307 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# SatMaza — Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST para o sistema de Solicitações de Assistência Técnica (SAT) da Maza. Gerencia o ciclo de vida completo das SATs, desde a abertura pelo representante até a conclusão da análise técnica (AVT) e envio de notificações por email.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Tecnologias
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Camada | Tecnologia |
+|---|---|
+| Framework | NestJS 11 + TypeScript 5.7 |
+| Banco principal | PostgreSQL 16 (TypeORM 0.3) |
+| Banco legado | MySQL (ERP AUTCOM) |
+| Autenticação | JWT + Passport + bcrypt |
+| Armazenamento | Azure Blob Storage |
+| Email | Microsoft Graph API |
+| PDF | PDFKit |
+| Deploy | Docker Compose + Nginx |
+| Documentação | Swagger / OpenAPI |
 
-## Project setup
+---
 
-```bash
-$ npm install
-```
+## Módulos
 
-## Compile and run the project
+| Módulo | Responsabilidade |
+|---|---|
+| `auth` | Login, logout, JWT, blacklist de tokens, RBAC |
+| `usuario` | Cadastro e gestão de usuários (5 roles) |
+| `sat` | CRUD de SATs, status, redirecionamento, dashboard |
+| `avt` | Averiguação Técnica vinculada à SAT |
+| `mediaAttachment` | Upload/download de evidências e laudos via Azure |
+| `mail` | Notificações por email com PDF anexado |
+| `shared/erp` | Consultas ao ERP legado (MySQL) |
+| `health` | Endpoints de health check para monitoramento |
 
-```bash
-# development
-$ npm run start
+### Roles de usuário
 
-# watch mode
-$ npm run start:dev
+| Role | Acesso |
+|---|---|
+| `ADMIN` | Acesso total |
+| `ORQUESTRADOR` | Gerencia e distribui SATs |
+| `BAGUA` | Laboratório Base Água |
+| `BSOLVENTE` | Laboratório Base Solvente |
+| `REPRESENTANTE` | Abre SATs e acompanha status |
 
-# production mode
-$ npm run start:prod
-```
+---
 
-## Run tests
+## Pré-requisitos
 
-```bash
-# unit tests
-$ npm run test
+- Node.js 22+
+- Docker + Docker Compose (para produção)
+- Credenciais Azure (Blob Storage + Graph API)
 
-# e2e tests
-$ npm run test:e2e
+---
 
-# test coverage
-$ npm run test:cov
-```
+## Configuração do Ambiente
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Copie o arquivo de exemplo e preencha as variáveis:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+| Variável | Descrição |
+|---|---|
+| `DB_HOST` | Host do PostgreSQL (`localhost` em dev, `postgres` em Docker) |
+| `DB_PORT` | Porta do PostgreSQL (padrão: `5432`) |
+| `DB_USER` | Usuário do banco |
+| `DB_PASS` | Senha do banco |
+| `DB_DATABASE` | Nome do banco (`dbsatmaza`) |
+| `ERP_HOST` | Host do MySQL do ERP |
+| `ERP_PORT` | Porta do MySQL |
+| `ERP_USER` | Usuário do ERP |
+| `ERP_PASS` | Senha do ERP |
+| `ERP_DB` | Database do ERP (`AUTCOM`) |
+| `JWT_SECRET` | Segredo JWT — gere com `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"` |
+| `AZURE_STORAGE_ACCOUNT_NAME` | Nome da conta Azure Storage |
+| `AZURE_STORAGE_ACCOUNT_KEY` | Chave da conta Azure Storage |
+| `AZURE_STORAGE_CONTAINER_NAME` | Nome do container de blobs |
+| `AZURE_TENANT_ID` | Tenant ID do Azure AD |
+| `AZURE_CLIENT_ID` | Client ID do App Registration |
+| `AZURE_CLIENT_SECRET` | Client Secret do App Registration |
+| `MAIL_SENDER_UPN` | Email remetente (UPN do usuário no Graph) |
+| `MAIL_NOTIFICACAO_SAT` | Email de notificação de SATs |
+| `PORT` | Porta da API (padrão: `3040`) |
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Desenvolvimento Local
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+# Instalar dependências
+npm install
 
-## Support
+# Iniciar em modo watch
+npm run start:dev
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+A API sobe em `http://localhost:3040`.
+Documentação Swagger disponível em `http://localhost:3040/api`.
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Banco de Dados (Migrations)
 
-## License
+O projeto usa **TypeORM Migrations** em produção. Em desenvolvimento, o `synchronize` está habilitado automaticamente.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# Rodar todas as migrations pendentes
+npm run migration:run
+
+# Criar nova migration
+npm run migration:generate -- src/migrations/NomeDaMigration
+
+# Reverter última migration
+npm run migration:revert
+
+# Ver status das migrations
+npm run migration:show
+```
+
+---
+
+## Build
+
+```bash
+npm run build
+# Saída gerada em dist/
+```
+
+---
+
+## Deploy com Docker Compose
+
+### Setup inicial (1x na VPS)
+
+```bash
+# 1. Instalar Docker
+curl -fsSL https://get.docker.com | sh && systemctl enable docker
+
+# 2. Clonar o repositório
+git clone <URL_DO_REPO> /opt/satmaza && cd /opt/satmaza
+
+# 3. Criar o arquivo de variáveis de produção
+cp .env.example .env.production
+nano .env.production
+# Atenção: DB_HOST deve ser "postgres" (nome do serviço no compose)
+
+# 4. Subir os containers
+docker compose up -d
+
+# 5. Rodar as migrations no banco recém-criado
+docker compose exec api npx typeorm migration:run -d dist/config/ormconfig.js
+```
+
+### Configurar Nginx (reverse proxy)
+
+Crie `/etc/nginx/sites-available/satmaza`:
+
+```nginx
+server {
+    listen 80;
+    server_name api.seudominio.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3040;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 60M;
+        proxy_read_timeout 120s;
+    }
+}
+```
+
+```bash
+ln -s /etc/nginx/sites-available/satmaza /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+
+# SSL gratuito com Let's Encrypt
+certbot --nginx -d api.seudominio.com
+```
+
+### Deployar atualizações
+
+```bash
+./deploy.sh
+```
+
+O script faz automaticamente: `git pull` → build da imagem → migrations → restart dos containers.
+
+---
+
+## Comandos Docker úteis
+
+```bash
+# Ver status dos containers
+docker compose ps
+
+# Acompanhar logs em tempo real
+docker compose logs api -f
+docker compose logs postgres -f
+
+# Acessar o banco diretamente
+docker compose exec postgres psql -U satmaza_user -d dbsatmaza
+
+# Reiniciar apenas a API (após atualização manual)
+docker compose restart api
+
+# Parar tudo (dados persistem no volume)
+docker compose down
+
+# Parar e apagar o banco (CUIDADO: destrói os dados)
+docker compose down -v
+```
+
+---
+
+## Health Check
+
+```bash
+# Verifica PostgreSQL + ERP MySQL
+GET /health
+
+# Verifica apenas o PostgreSQL
+GET /health/db
+
+# Verifica conectividade Azure
+GET /health/azure
+```
+
+Resposta esperada:
+```json
+{
+  "status": "ok",
+  "info": {
+    "database": { "status": "up" },
+    "erp_mysql": { "status": "up" }
+  }
+}
+```
+
+---
+
+## Estrutura do Projeto
+
+```
+src/
+├── auth/               # JWT, guards, estratégias, token blacklist
+├── avt/                # Averiguação Técnica (AVT)
+├── common/
+│   ├── dto/            # PaginationDto, PaginatedResult
+│   └── filters/        # HttpExceptionFilter (erros padronizados)
+├── config/
+│   └── ormconfig.ts    # DataSource para migrations CLI
+├── health/             # Endpoints /health, /health/db, /health/azure
+├── mail/               # Notificações por email com PDF (retry automático)
+├── mediaAttachment/    # Upload/download Azure Blob Storage
+├── migrations/         # Histórico de migrations do banco
+├── sat/                # SATs, dashboard, filtros, paginação
+├── shared/
+│   └── erp/            # Consultas ao ERP MySQL legado
+└── usuario/            # Gestão de usuários e roles
+```
+
+---
+
+## Paginação nas Listagens
+
+Os endpoints de listagem de SAT suportam paginação via query params:
+
+```
+GET /sat?page=1&limit=20
+GET /sat/status/PENDENTE?page=2&limit=10
+GET /sat/laboratorio/BASE_AGUA?page=1&limit=50
+GET /sat/representante/123?page=1&limit=20
+```
+
+Resposta:
+```json
+{
+  "data": [...],
+  "meta": {
+    "total": 150,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 8
+  }
+}
+```
+
+---
+
+## Testes
+
+```bash
+# Unitários
+npm run test
+
+# Com cobertura
+npm run test:cov
+
+# E2E
+npm run test:e2e
+```

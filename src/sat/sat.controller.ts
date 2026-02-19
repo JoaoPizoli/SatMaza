@@ -15,6 +15,7 @@ import { AvtEntity } from "src/avt/entity/avt.entity";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 import { DashboardFilterDto } from "./dto/dashboard-filter.dto";
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @ApiTags('SAT')
 @ApiBearerAuth('access-token')
@@ -56,10 +57,10 @@ export class SatController {
     }
 
     @Get()
-    @ApiOperation({ summary: 'Listar todas as SATs', description: 'Retorna todas as SATs cadastradas' })
-    @ApiResponse({ status: 200, description: 'Lista de SATs', type: [SatEntity] })
-    async findAllSat() {
-        return await this.satService.findAll();
+    @ApiOperation({ summary: 'Listar todas as SATs', description: 'Retorna SATs paginadas. Use ?page=1&limit=20 para navegar.' })
+    @ApiResponse({ status: 200, description: 'Lista de SATs paginada' })
+    async findAllSat(@Query() pagination: PaginationDto) {
+        return await this.satService.findAll(pagination);
     }
 
     @Get('dashboard/sector')
@@ -95,27 +96,27 @@ export class SatController {
     }
 
     @Get('laboratorio/:laboratorio')
-    @ApiOperation({ summary: 'Buscar SATs por laboratório', description: 'Retorna as SATs destinadas a um laboratório específico' })
+    @ApiOperation({ summary: 'Buscar SATs por laboratório', description: 'Retorna as SATs destinadas a um laboratório específico, paginadas.' })
     @ApiParam({ name: 'laboratorio', description: 'Laboratório de destino', enum: LaboratorioSatEnum })
-    @ApiResponse({ status: 200, description: 'Lista de SATs do laboratório', type: [SatEntity] })
-    async findSatsByLab(@Param('laboratorio') laboratorio: LaboratorioSatEnum) {
-        return await this.satService.findSatsByLab(laboratorio);
+    @ApiResponse({ status: 200, description: 'Lista de SATs do laboratório paginada' })
+    async findSatsByLab(@Param('laboratorio') laboratorio: LaboratorioSatEnum, @Query() pagination: PaginationDto) {
+        return await this.satService.findSatsByLab(laboratorio, pagination);
     }
 
     @Get('representante/:representanteId')
-    @ApiOperation({ summary: 'Buscar SATs por representante', description: 'Retorna as SATs associadas a um representante' })
+    @ApiOperation({ summary: 'Buscar SATs por representante', description: 'Retorna as SATs associadas a um representante, paginadas.' })
     @ApiParam({ name: 'representanteId', description: 'ID do representante', example: 12345 })
-    @ApiResponse({ status: 200, description: 'Lista de SATs do representante', type: [SatEntity] })
-    async findSatsByRepresentante(@Param('representanteId') representanteId: number) {
-        return await this.satService.findSatsByRepresentante(representanteId);
+    @ApiResponse({ status: 200, description: 'Lista de SATs do representante paginada' })
+    async findSatsByRepresentante(@Param('representanteId') representanteId: number, @Query() pagination: PaginationDto) {
+        return await this.satService.findSatsByRepresentante(representanteId, pagination);
     }
 
     @Get('status/:status')
-    @ApiOperation({ summary: 'Buscar SATs por status', description: 'Retorna as SATs com um status específico' })
+    @ApiOperation({ summary: 'Buscar SATs por status', description: 'Retorna as SATs com um status específico, paginadas.' })
     @ApiParam({ name: 'status', description: 'Status da SAT', enum: StatusSatEnum })
-    @ApiResponse({ status: 200, description: 'Lista de SATs com o status informado', type: [SatEntity] })
-    async findSatsByStatus(@Param('status') status: StatusSatEnum) {
-        return await this.satService.findSatsByStatus(status);
+    @ApiResponse({ status: 200, description: 'Lista de SATs com o status informado paginada' })
+    async findSatsByStatus(@Param('status') status: StatusSatEnum, @Query() pagination: PaginationDto) {
+        return await this.satService.findSatsByStatus(status, pagination);
     }
 
     @Get(':id')

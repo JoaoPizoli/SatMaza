@@ -22,7 +22,7 @@ export class AuthService {
         private tokenBlacklistService: TokenBlacklistService,
     ) { }
 
-    async login(dto: LoginDto): Promise<{ access_token: string }> {
+    async login(dto: LoginDto): Promise<{ access_token: string; pending_setup: boolean }> {
         let usuario: UsuarioEntity | null = null;
 
         if (dto.email) {
@@ -59,8 +59,7 @@ export class AuthService {
 
         return {
             access_token: this.jwtService.sign(payload),
-            // @ts-ignore
-            pending_setup
+            pending_setup,
         };
     }
 
