@@ -3,13 +3,14 @@ import { SatService } from '../sat/sat.service';
 import { SatPdfService } from './sat-pdf.service';
 import { GraphMailService } from './graph-mail.service';
 import { SatEntity } from '../sat/entity/sat.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RepreAtendenteEntity } from '../usuario/entity/repre_atendente.entity';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CENÁRIO 1 — Reclamação Procedente / Troca / Recolhimento de Lote
 // (Pelo menos um dos três booleans é TRUE)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const TO_PROCEDENTE = ['ti@maza.com.br'];
-const CC_PROCEDENTE = ['marcos.zamarque@maza.com.br'];
 
 function buildMsgProcedente(sat: SatEntity): string {
     const avt = sat.avt!;
@@ -46,8 +47,6 @@ function buildMsgProcedente(sat: SatEntity): string {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CENÁRIO 2 — Nenhuma marcação (todos os booleans FALSE)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const TO_IMPROCEDENTE = ['joao.carvalho@maza.com.br'];
-const CC_IMPROCEDENTE = ['gabriel.moretti@maza.com.br'];
 
 function buildMsgImprocedente(sat: SatEntity): string {
     const representante = sat.representante?.usuario ?? String(sat.representante_id);
@@ -86,6 +85,8 @@ export class SatNotificationService {
         private readonly satService: SatService,
         private readonly satPdfService: SatPdfService,
         private readonly graphMailService: GraphMailService,
+        @InjectRepository(RepreAtendenteEntity)
+        private readonly repreAtendenteRepository: Repository<RepreAtendenteEntity>,
     ) { }
 
     /**
@@ -160,8 +161,35 @@ export class SatNotificationService {
             avt.troca === true ||
             avt.recolhimento_lote === true;
 
-        const to = isProcedente ? TO_PROCEDENTE : TO_IMPROCEDENTE;
-        const cc = isProcedente ? CC_PROCEDENTE : CC_IMPROCEDENTE;
+        const to = isProcedente
+            ? (process.env.EMAIL_PROCEDENTE ? process.env.EMAIL_PROCEDENTE.split(',').map(e => e.trim()) : [])
+            : (process.env.EMAIL_IMPROCEDENTE ? process.env.EMAIL_IMPROCEDENTE.split(',').map(e => e.trim()) : []);
+
+        const cc = isProcedente
+            ? (process.env.CC_PROCEDENTE ? process.env.CC_PROCEDENTE.split(',').map(e => e.trim()) : [])
+            : (process.env.CC_IMPROCEDENTE ? process.env.CC_IMPROCEDENTE.split(',').map(e => e.trim()) : []);
+
+        // Adicionar o email do representante comercial responsável pelo usuário que abriu a SAT
+        if (sat.representante && sat.representante.usuario) {
+            const repreAtendente = await this.repreAtendenteRepository
+                .createQueryBuilder('ra')
+                // ANY() é um operador nativo do PostgreSQL para buscar dentro de arrays
+                .where(':userCode = ANY(ra.usuarios)', { userCode: sat.representante.usuario })
+                .getOne();
+
+            if (repreAtendente && repreAtendente.email_representante_comercial) {
+                const repEmail = repreAtendente.email_representante_comercial.trim();
+                if (!to.includes(repEmail)) {
+                    to.push(repEmail);
+                }
+            }
+        }
+
+        if (to.length === 0) {
+            this.logger.warn(`SAT ${sat.codigo}: Nenhum email de destino definido em .env ou Representante Comercial. Email não será enviado.`);
+            return;
+        }
+
         const html = isProcedente
             ? buildMsgProcedente(sat)
             : buildMsgImprocedente(sat);
@@ -210,7 +238,6 @@ export class SatNotificationService {
     }
 
     private async _doNotifyRedirection(sat: SatEntity): Promise<void> {
-        const emailNotificacao = process.env.MAIL_NOTIFICACAO_SAT || 'ti@maza.com.br';
         const destinoTexto = sat.destino;
         const origemTexto = sat.destino === 'BASE_AGUA' ? 'Base Solvente' : 'Base Água';
 
@@ -228,15 +255,28 @@ export class SatNotificationService {
         // Gerar PDF da SAT (lança exceção em caso de falha para permitir retry)
         const pdfBuffer = await this.satPdfService.generatePdf(sat);
 
+        const to = process.env.EMAIL_TROCA
+            ? process.env.EMAIL_TROCA.split(',').map(e => e.trim())
+            : [];
+
+        const cc = process.env.CC_TROCA
+            ? process.env.CC_TROCA.split(',').map(e => e.trim())
+            : [];
+
+        if (to.length === 0) {
+            this.logger.warn(`SAT ${sat.codigo}: EMAIL_TROCA não definido no .env. Email de redirecionamento não será enviado.`);
+            return;
+        }
+
         await this.graphMailService.sendWithPdfAttachment({
-            to: [emailNotificacao],
-            cc: ['joao.carvalho@maza.com.br'],
+            to,
+            cc,
             subject: `SAT Redirecionada: ${sat.codigo}`,
             html,
             pdfBuffer,
             attachmentName: `SAT-${sat.codigo}.pdf`,
         });
 
-        this.logger.log(`Email de redirecionamento enviado para ${emailNotificacao} - SAT ${sat.codigo}`);
+        this.logger.log(`Email de redirecionamento enviado para SAT ${sat.codigo}`);
     }
 }

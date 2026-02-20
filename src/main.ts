@@ -11,10 +11,16 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  const rawOrigins = process.env.ALLOWED_ORIGINS;
+  const allowedOrigins = rawOrigins
+    ? rawOrigins.split(',').map(o => o.trim())
+    : null; // null = permite tudo (desenvolvimento)
+
   app.enableCors({
-    origin: '*',
+    origin: allowedOrigins ?? '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization',
+    credentials: true,
   });
 
   app.useGlobalPipes(new ValidationPipe({
