@@ -10,13 +10,15 @@ import { TipoUsuarioEnum } from "./enum/tipo-usuario.enum";
 import { CompleteRegistrationDto } from "./dto/complete-registration.dto";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import type { UserFromToken } from "src/auth/decorators/current-user.decorator";
+import { ErpService } from "src/shared/erp/erp.service";
 
 @ApiTags('Usuário')
 @ApiBearerAuth('access-token')
 @Controller('usuario')
 export class UsuarioController {
     constructor(
-        private usuarioService: UsuarioService
+        private usuarioService: UsuarioService,
+        private erpService: ErpService,
     ) { }
 
     @Post()
@@ -98,10 +100,18 @@ export class UsuarioController {
     }
 
     @Post('complete-registration')
-    @ApiOperation({ summary: 'Completar cadastro', description: 'Permite que o usuário complete seu cadastro (nome, email, senha)' })
+    @ApiOperation({ summary: 'Completar cadastro', description: 'Permite que o usuário complete seu cadastro (email, senha). O nome é buscado automaticamente do ERP.' })
     @ApiBody({ type: CompleteRegistrationDto })
     @ApiResponse({ status: 200, description: 'Cadastro completado com sucesso', type: UsuarioEntity })
     async completeRegistration(@Body() dados: CompleteRegistrationDto, @CurrentUser() user: UserFromToken) {
-        return await this.usuarioService.completeRegistration(user.id, dados);
+        // Buscar nome no ERP pelo código do representante (CODREP = user.usuario)
+        const erpRep = await this.erpService.buscarRepresentante(user.usuario);
+        const nome = erpRep?.NOMREP ?? user.usuario; // fallback: usa o código se ERP não retornar
+
+        return await this.usuarioService.completeRegistration(user.id, {
+            nome,
+            email: dados.email,
+            senha: dados.senha,
+        });
     }
 } 
