@@ -55,7 +55,9 @@ export class ErpService {
                 `SELECT * FROM VW_PRODUTOS WHERE 
                     (DESCRICAO_ITEM LIKE ? OR CODIGO_ITEM LIKE ?) 
                     AND DEPARTAMENTO = 'PRODUTO ACABADO'
-                    AND CODIGO_EMPRESA = 001`,
+                    AND CODIGO_EMPRESA = 001
+                    AND DESCRICAO_ITEM NOT LIKE '%(ÑUSAR+)'
+                    `,
                 [`%${busca}%`, `%${busca}%`],
             );
         }
