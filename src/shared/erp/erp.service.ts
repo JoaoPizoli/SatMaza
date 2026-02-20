@@ -56,14 +56,14 @@ export class ErpService {
                     (DESCRICAO_ITEM LIKE ? OR CODIGO_ITEM LIKE ?) 
                     AND DEPARTAMENTO = 'PRODUTO ACABADO'
                     AND CODIGO_EMPRESA = 001
-                    AND DESCRICAO_ITEM NOT LIKE '%(ÑUSAR+)%'
+                    AND DESCRICAO_ITEM NOT LIKE '%(ÑUSAR+)'
                     `,
                 [`%${busca}%`, `%${busca}%`],
             );
         }
 
         return await this.erpDataSource.query(
-            "SELECT * FROM VW_PRODUTOS WHERE DEPARTAMENTO = 'PRODUTO ACABADO' AND CODIGO_EMPRESA = 001 LIMIT 50",
+            "SELECT * FROM VW_PRODUTOS WHERE DEPARTAMENTO = 'PRODUTO ACABADO' AND CODIGO_EMPRESA = 001 AND DESCRICAO_ITEM NOT LIKE '%(ÑUSAR+)' LIMIT 50",
         );
     }
 
