@@ -217,10 +217,6 @@ export class SatNotificationService {
      * Tenta enviar o email até 3 vezes com backoff exponencial antes de desistir.
      */
     async notifyRedirection(sat: SatEntity): Promise<void> {
-        if (!sat.representante?.email) {
-            return;
-        }
-
         try {
             await this.withRetry(
                 () => this._doNotifyRedirection(sat),
