@@ -37,7 +37,6 @@ echo "  PostgreSQL pronto!"
 # 4. Executa as migrations (postgres já está na rede, DNS resolve corretamente)
 echo "→ [4/5] Executando migrations do banco..."
 docker compose run --rm \
-  --env-file .env.production \
   api \
   npx typeorm migration:run -d dist/config/ormconfig.js
 
