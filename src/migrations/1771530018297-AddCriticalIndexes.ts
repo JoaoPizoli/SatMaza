@@ -19,6 +19,11 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class AddCriticalIndexes1771530018297 implements MigrationInterface {
     name = 'AddCriticalIndexes1771530018297'
 
+    // CREATE INDEX CONCURRENTLY não pode rodar dentro de transaction.
+    // Com transaction = false o TypeORM não envolve esta migration em BEGIN/COMMIT.
+    // Os IF NOT EXISTS garantem idempotência caso a migration seja reexecutada.
+    transaction = false;
+
     public async up(queryRunner: QueryRunner): Promise<void> {
         // ── blacklisted_tokens ─────────────────────────────────────────────────
         // Crítico: consultado em cada request para validar se o token foi revogado
@@ -73,13 +78,13 @@ export class AddCriticalIndexes1771530018297 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_blacklisted_tokens_token"`);
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_blacklisted_tokens_expiresAt"`);
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_sat_representante_id"`);
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_sat_status"`);
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_sat_destino"`);
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_sat_createdAt"`);
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_avt_sat_id"`);
-        await queryRunner.query(`DROP INDEX CONCURRENTLY IF EXISTS "IDX_avt_usuario_id"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_blacklisted_tokens_token"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_blacklisted_tokens_expiresAt"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_sat_representante_id"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_sat_status"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_sat_destino"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_sat_createdAt"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_avt_sat_id"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_avt_usuario_id"`);
     }
 }
