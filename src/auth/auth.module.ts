@@ -8,19 +8,20 @@ import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { TokenBlacklistService } from "./token-blacklist.service";
 import { BlacklistedTokenEntity } from "./entity/blacklisted-token.entity";
+import { RefreshTokenEntity } from "./entity/refresh-token.entity";
 import { UsuarioModule } from "src/usuario/usuario.module";
 
 @Module({
     imports: [
         UsuarioModule,
         PassportModule,
-        TypeOrmModule.forFeature([BlacklistedTokenEntity]),
+        TypeOrmModule.forFeature([BlacklistedTokenEntity, RefreshTokenEntity]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
                 secret: configService.getOrThrow<string>("JWT_SECRET"),
-                signOptions: { expiresIn: "8h" },
+                signOptions: { expiresIn: "15m" },
             }),
         }),
     ],

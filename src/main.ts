@@ -11,10 +11,17 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  const isProduction = process.env.NODE_ENV === 'production';
   const rawOrigins = process.env.ALLOWED_ORIGINS;
+
+  if (isProduction && !rawOrigins) {
+    logger.error('ALLOWED_ORIGINS é obrigatório em produção. Defina no .env.');
+    process.exit(1);
+  }
+
   const allowedOrigins = rawOrigins
     ? rawOrigins.split(',').map(o => o.trim())
-    : null; // null = permite tudo (desenvolvimento)
+    : null; // null = permite tudo (apenas desenvolvimento)
 
   app.enableCors({
     origin: allowedOrigins ?? '*',
@@ -33,25 +40,27 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const config = new DocumentBuilder()
-    .setTitle('SatMaza API')
-    .setDescription('API do sistema SatMaza - Gestão de SATs, AVTs, Mídias e Usuários')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'Authorization',
-        description: 'Insira o token JWT',
-        in: 'header',
-      },
-      'access-token',
-    )
-    .build();
+  if (!isProduction) {
+    const config = new DocumentBuilder()
+      .setTitle('SatMaza API')
+      .setDescription('API do sistema SatMaza - Gestão de SATs, AVTs, Mídias e Usuários')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'Authorization',
+          description: 'Insira o token JWT',
+          in: 'header',
+        },
+        'access-token',
+      )
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
 
   const port = process.env.PORT ?? 3040;
   await app.listen(port);

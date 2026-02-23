@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
+import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { Public } from "./decorators/public.decorator";
 import { CurrentUser } from "./decorators/current-user.decorator";
 import type { UserFromToken } from "./decorators/current-user.decorator";
@@ -20,12 +22,24 @@ export class AuthController {
 
     @Public()
     @Post('login')
-    @ApiOperation({ summary: 'Login', description: 'Autentica o usuário e retorna o token JWT' })
+    @Throttle({ default: { ttl: 900000, limit: 3 } })
+    @ApiOperation({ summary: 'Login', description: 'Autentica o usuário e retorna os tokens JWT' })
     @ApiBody({ type: LoginDto })
     @ApiResponse({ status: 200, description: 'Login realizado com sucesso', type: LoginResponseDto })
     @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
     async login(@Body() dto: LoginDto) {
         return await this.authService.login(dto);
+    }
+
+    @Public()
+    @Post('refresh')
+    @Throttle({ default: { ttl: 60000, limit: 10 } })
+    @ApiOperation({ summary: 'Renovar tokens', description: 'Renova o access token usando o refresh token (rotação)' })
+    @ApiBody({ type: RefreshTokenDto })
+    @ApiResponse({ status: 200, description: 'Tokens renovados com sucesso' })
+    @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado' })
+    async refresh(@Body() dto: RefreshTokenDto) {
+        return await this.authService.refreshTokens(dto.refresh_token);
     }
 
     @Get('me')
@@ -39,11 +53,12 @@ export class AuthController {
 
     @Post('logout')
     @ApiBearerAuth('access-token')
-    @ApiOperation({ summary: 'Logout', description: 'Invalida o token JWT atual' })
+    @ApiOperation({ summary: 'Logout', description: 'Invalida o access token e revoga o refresh token' })
+    @ApiBody({ schema: { type: 'object', properties: { refresh_token: { type: 'string', description: 'Refresh token a ser revogado' } } } })
     @ApiResponse({ status: 200, description: 'Logout realizado com sucesso' })
     @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
-    logout(@Req() req: Request) {
-        const token = req.headers.authorization?.replace('Bearer ', '') ?? '';
-        return this.authService.logout(token);
+    logout(@Req() req: Request, @Body('refresh_token') refreshToken?: string) {
+        const accessToken = req.headers.authorization?.replace('Bearer ', '') ?? '';
+        return this.authService.logout(accessToken, refreshToken);
     }
 }

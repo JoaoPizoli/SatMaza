@@ -23,7 +23,10 @@ export class RefactorSatLotes1700000000000 implements MigrationInterface {
             const lotesArr = sat.lotes.split(','); // TypeORM simple-array default separator
             for (const lote of lotesArr) {
                 if (lote.trim()) {
-                    await queryRunner.query(`INSERT INTO "sat_lote" (id, lote, validade, sat_id) VALUES (uuid_generate_v4(), '${lote.trim()}', '${sat.validade}', '${sat.id}')`);
+                    await queryRunner.query(
+                        `INSERT INTO "sat_lote" (id, lote, validade, sat_id) VALUES (uuid_generate_v4(), $1, $2, $3)`,
+                        [lote.trim(), sat.validade, sat.id],
+                    );
                 }
             }
         }

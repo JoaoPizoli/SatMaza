@@ -270,8 +270,9 @@ export class SatService {
             qb.andWhere('sat.createdAt >= :startDate', { startDate: filter.startDate });
         }
         if (filter.endDate) {
-            // Ajuste para incluir o final do dia
-            qb.andWhere('sat.createdAt <= :endDate', { endDate: `${filter.endDate} 23:59:59` });
+            // Ajuste para incluir o final do dia — usar objeto Date evita concatenação de string no parâmetro
+            const endOfDay = new Date(`${filter.endDate}T23:59:59.999`);
+            qb.andWhere('sat.createdAt <= :endDate', { endDate: endOfDay });
         }
         if (filter.representanteId) {
             qb.andWhere('sat.representante_id = :representanteId', { representanteId: filter.representanteId });

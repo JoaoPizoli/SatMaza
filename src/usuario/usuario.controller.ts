@@ -5,7 +5,6 @@ import { CreateUsuarioDto } from "./dto/create-usuario.dto";
 import { UpdateUsuarioDto } from "./dto/update-usuario.dto";
 import { UsuarioEntity } from "./entity/usuario.entity";
 import { Roles } from "src/auth/decorators/roles.decorator";
-import { Public } from "src/auth/decorators/public.decorator";
 import { TipoUsuarioEnum } from "./enum/tipo-usuario.enum";
 import { CompleteRegistrationDto } from "./dto/complete-registration.dto";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
@@ -22,8 +21,7 @@ export class UsuarioController {
     ) { }
 
     @Post()
-    @Public() // TODO: Remover após criar usuário admin
-    // @Roles(TipoUsuarioEnum.ADMIN)
+    @Roles(TipoUsuarioEnum.ADMIN)
     @ApiOperation({ summary: 'Criar usuário', description: 'Cria um novo usuário no sistema' })
     @ApiBody({ type: CreateUsuarioDto })
     @ApiResponse({ status: 201, description: 'Usuário criado com sucesso', type: UsuarioEntity })

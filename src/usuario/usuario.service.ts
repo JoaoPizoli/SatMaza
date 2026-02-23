@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
 import { TipoUsuarioEnum } from "./enum/tipo-usuario.enum";
 import { UsuarioEntity } from "./entity/usuario.entity";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -9,11 +9,48 @@ import * as bcrypt from "bcrypt";
 
 
 @Injectable()
-export class UsuarioService {
+export class UsuarioService implements OnModuleInit {
+    private readonly logger = new Logger(UsuarioService.name);
+
     constructor(
         @InjectRepository(UsuarioEntity)
         private usuarioRepository: Repository<UsuarioEntity>
     ) { }
+
+    async onModuleInit() {
+        await this.seedAdmin();
+    }
+
+    private async seedAdmin() {
+        const adminExists = await this.usuarioRepository.findOne({
+            where: { tipo: TipoUsuarioEnum.ADMIN }
+        });
+
+        if (!adminExists) {
+            this.logger.log('Nenhum usuário ADMIN encontrado no banco de dados. Criando admin padrão...');
+            const salt = await bcrypt.genSalt(10);
+
+            const email = process.env.ADMIN_DEFAULT_EMAIL;
+            const senha = process.env.ADMIN_DEFAULT_PASSWORD;
+            const usuarioMatricula = process.env.ADMIN_DEFAULT_USUARIO || '001';
+
+            const hashSenha = await bcrypt.hash(senha || 'exemplo', salt);
+
+            const novoAdmin = this.usuarioRepository.create({
+                usuario: usuarioMatricula,
+                senha: hashSenha,
+                email: email || 'exemplo',
+                tipo: TipoUsuarioEnum.ADMIN,
+                nome: "Administrador Sistema",
+                password_changed: true
+            });
+
+            await this.usuarioRepository.save(novoAdmin);
+            this.logger.log(`Admin criado com sucesso. Matrícula: ${usuarioMatricula} | Email: ${email}`);
+        } else {
+            this.logger.log('Usuário ADMIN já existente. Seed ignorado.');
+        }
+    }
 
     async create(dadosUsuario: CreateUsuarioDto): Promise<UsuarioEntity> {
         const salt = await bcrypt.genSalt(10);
@@ -70,7 +107,6 @@ export class UsuarioService {
         }
 
         await this.usuarioRepository.update(id, updateData);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return (await this.findOne(id))!;
     }
 }

@@ -31,7 +31,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
         password: configService.get('DB_PASS'),
         database: configService.get('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: process.env.NODE_ENV !== 'production', 
+        synchronize: process.env.NODE_ENV === 'development',
         autoLoadEntities: true,
       }),
     }),
