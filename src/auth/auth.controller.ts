@@ -22,7 +22,7 @@ export class AuthController {
 
     @Public()
     @Post('login')
-    @Throttle({ default: { ttl: 900000, limit: 3 } })
+    @Throttle({ default: { ttl: 900000, limit: 15 } })
     @ApiOperation({ summary: 'Login', description: 'Autentica o usuário e retorna os tokens JWT' })
     @ApiBody({ type: LoginDto })
     @ApiResponse({ status: 200, description: 'Login realizado com sucesso', type: LoginResponseDto })
