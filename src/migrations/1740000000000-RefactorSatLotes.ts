@@ -1,8 +1,7 @@
-
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class RefactorSatLotes1700000000000 implements MigrationInterface {
-    name = 'RefactorSatLotes1700000000000'
+export class RefactorSatLotes1771602000000 implements MigrationInterface {
+    name = 'RefactorSatLotes1771602000000'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // 1. Create sat_lote table
@@ -14,7 +13,7 @@ export class RefactorSatLotes1700000000000 implements MigrationInterface {
         // 3. Migrate existing data (Best effort)
         // We need to move data from sat.lotes (simple-array) and sat.validade to sat_lote table
         // Since simple-array is comma separated string in DB usually.
-        // BUT, TypeORM 'simple-array' is TEXT/VARCHAR. 
+        // BUT, TypeORM 'simple-array' is TEXT/VARCHAR.
 
         // Let's iterate over SATs that have lotes
         const sats = await queryRunner.query(`SELECT id, lotes, validade FROM "sat" WHERE lotes IS NOT NULL AND lotes != ''`);
@@ -37,12 +36,8 @@ export class RefactorSatLotes1700000000000 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        // Reverse is hard because we might merge multiple lotes back. 
-        // For now, simpler down: add columns back, drop table. Data loss on DOWN is acceptable for this refactor in dev.
         await queryRunner.query(`ALTER TABLE "sat" ADD "validade" varchar(255) NOT NULL DEFAULT ''`);
-        await queryRunner.query(`ALTER TABLE "sat" ADD "lotes" text NOT NULL DEFAULT ''`); // simple-array uses text usually or varchar
-
-        // We could try to restore data taking the first lote/validade, but let's keep it simple for now.
+        await queryRunner.query(`ALTER TABLE "sat" ADD "lotes" text NOT NULL DEFAULT ''`);
 
         await queryRunner.query(`ALTER TABLE "sat_lote" DROP CONSTRAINT "FK_sat_lote_sat"`);
         await queryRunner.query(`DROP TABLE "sat_lote"`);
