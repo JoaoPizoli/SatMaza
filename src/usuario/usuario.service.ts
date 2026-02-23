@@ -26,30 +26,44 @@ export class UsuarioService implements OnModuleInit {
             where: { tipo: TipoUsuarioEnum.ADMIN }
         });
 
-        if (!adminExists) {
-            this.logger.log('Nenhum usuário ADMIN encontrado no banco de dados. Criando admin padrão...');
-            const salt = await bcrypt.genSalt(10);
-
-            const email = process.env.ADMIN_DEFAULT_EMAIL;
-            const senha = process.env.ADMIN_DEFAULT_PASSWORD;
-            const usuarioMatricula = process.env.ADMIN_DEFAULT_USUARIO || '001';
-
-            const hashSenha = await bcrypt.hash(senha || 'exemplo', salt);
-
-            const novoAdmin = this.usuarioRepository.create({
-                usuario: usuarioMatricula,
-                senha: hashSenha,
-                email: email || 'exemplo',
-                tipo: TipoUsuarioEnum.ADMIN,
-                nome: "Administrador Sistema",
-                password_changed: true
-            });
-
-            await this.usuarioRepository.save(novoAdmin);
-            this.logger.log(`Admin criado com sucesso. Matrícula: ${usuarioMatricula} | Email: ${email}`);
-        } else {
+        if (adminExists) {
             this.logger.log('Usuário ADMIN já existente. Seed ignorado.');
+            return;
         }
+
+        const email = process.env.ADMIN_DEFAULT_EMAIL;
+        const senha = process.env.ADMIN_DEFAULT_PASSWORD;
+        const usuarioMatricula = process.env.ADMIN_DEFAULT_USUARIO || '001';
+
+        if (!email || !senha) {
+            this.logger.error(
+                '════════════════════════════════════════════════════════\n' +
+                '  ERRO: Nenhum admin encontrado e as variáveis de ambiente\n' +
+                '  ADMIN_DEFAULT_EMAIL e/ou ADMIN_DEFAULT_PASSWORD não foram\n' +
+                '  definidas no .env.production.\n' +
+                '  A aplicação não pode iniciar sem um usuário administrador.\n' +
+                '  Defina as variáveis e reinicie o container.\n' +
+                '════════════════════════════════════════════════════════'
+            );
+            // Encerra o processo para forçar o operador a corrigir o env
+            process.exit(1);
+        }
+
+        this.logger.log('Nenhum usuário ADMIN encontrado. Criando admin padrão...');
+        const salt = await bcrypt.genSalt(10);
+        const hashSenha = await bcrypt.hash(senha, salt);
+
+        const novoAdmin = this.usuarioRepository.create({
+            usuario: usuarioMatricula,
+            senha: hashSenha,
+            email,
+            tipo: TipoUsuarioEnum.ADMIN,
+            nome: 'Administrador Sistema',
+            password_changed: true,
+        });
+
+        await this.usuarioRepository.save(novoAdmin);
+        this.logger.log(`Admin criado. Matrícula: ${usuarioMatricula} | Email: ${email}`);
     }
 
     async create(dadosUsuario: CreateUsuarioDto): Promise<UsuarioEntity> {

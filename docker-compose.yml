@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     env_file: .env.production
     ports:
-      - "127.0.0.1:3040:3040"   # Apenas localhost — Nginx faz o proxy externo
+      - "127.0.0.1:3040:3040"  
     depends_on:
       postgres:
         condition: service_healthy  # Aguarda o banco estar pronto antes de subir
