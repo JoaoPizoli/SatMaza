@@ -19,60 +19,55 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class AddCriticalIndexes1771530018297 implements MigrationInterface {
     name = 'AddCriticalIndexes1771530018297'
 
-    // CREATE INDEX CONCURRENTLY não pode rodar dentro de transaction.
-    // Com transaction = false o TypeORM não envolve esta migration em BEGIN/COMMIT.
-    // Os IF NOT EXISTS garantem idempotência caso a migration seja reexecutada.
-    transaction = false;
-
     public async up(queryRunner: QueryRunner): Promise<void> {
         // ── blacklisted_tokens ─────────────────────────────────────────────────
         // Crítico: consultado em cada request para validar se o token foi revogado
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_blacklisted_tokens_token"
+            CREATE INDEX IF NOT EXISTS "IDX_blacklisted_tokens_token"
             ON "blacklisted_tokens" ("token")
         `);
 
         // Útil para job de limpeza de tokens expirados
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_blacklisted_tokens_expiresAt"
+            CREATE INDEX IF NOT EXISTS "IDX_blacklisted_tokens_expiresAt"
             ON "blacklisted_tokens" ("expiresAt")
         `);
 
         // ── sat ────────────────────────────────────────────────────────────────
         // Filtro de SATs por representante (tela "Minhas SATs")
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_sat_representante_id"
+            CREATE INDEX IF NOT EXISTS "IDX_sat_representante_id"
             ON "sat" ("representante_id")
         `);
 
         // Filtro por status (PENDENTE, EM_ANALISE, FINALIZADA, etc.)
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_sat_status"
+            CREATE INDEX IF NOT EXISTS "IDX_sat_status"
             ON "sat" ("status")
         `);
 
         // Filtro por laboratório de destino (BASE_AGUA / BASE_SOLVENTE)
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_sat_destino"
+            CREATE INDEX IF NOT EXISTS "IDX_sat_destino"
             ON "sat" ("destino")
         `);
 
         // ORDER BY createdAt DESC em todas as listagens paginadas
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_sat_createdAt"
+            CREATE INDEX IF NOT EXISTS "IDX_sat_createdAt"
             ON "sat" ("createdAt" DESC)
         `);
 
         // ── avt ────────────────────────────────────────────────────────────────
         // Chave estrangeira OneToOne AVT → SAT (JoinColumn sat_id)
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_avt_sat_id"
+            CREATE INDEX IF NOT EXISTS "IDX_avt_sat_id"
             ON "avt" ("sat_id")
         `);
 
         // Chave estrangeira ManyToOne AVT → Usuario (responsável técnico)
         await queryRunner.query(`
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_avt_usuario_id"
+            CREATE INDEX IF NOT EXISTS "IDX_avt_usuario_id"
             ON "avt" ("usuario_id")
         `);
     }
