@@ -40,6 +40,6 @@ export class UsuarioEntity {
 
     @ApiHideProperty()
     @Column({ default: false })
-    @Exclude() // Mantemos exclude para não vazar, mas precisamos verificar internamente
+    @Exclude()
     password_changed: boolean;
 }
