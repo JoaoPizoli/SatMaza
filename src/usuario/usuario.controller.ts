@@ -102,9 +102,12 @@ export class UsuarioController {
     @ApiBody({ type: CompleteRegistrationDto })
     @ApiResponse({ status: 200, description: 'Cadastro completado com sucesso', type: UsuarioEntity })
     async completeRegistration(@Body() dados: CompleteRegistrationDto, @CurrentUser() user: UserFromToken) {
-        // Buscar nome no ERP pelo código do representante (CODREP = user.usuario)
-        const erpRep = await this.erpService.buscarRepresentante(user.usuario);
-        const nome = erpRep?.NOMREP ?? user.usuario; // fallback: usa o código se ERP não retornar
+        let nome: string = String(user.usuario);
+        try {
+            const erpRep = await this.erpService.buscarRepresentante(user.usuario);
+            if (erpRep?.NOMREP) nome = erpRep.NOMREP;
+        } catch {
+        }
 
         return await this.usuarioService.completeRegistration(user.id, {
             nome,
