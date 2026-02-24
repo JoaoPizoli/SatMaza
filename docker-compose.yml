@@ -12,8 +12,8 @@ services:
       POSTGRES_DB: ${DB_DATABASE}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Porta NOT exposta ao host — a API acessa via rede interna Docker (hostname "postgres")
-    # Remover o binding evita conflito com PostgreSQL local da VPS
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_DATABASE}"]
       interval: 10s
