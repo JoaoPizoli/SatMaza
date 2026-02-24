@@ -67,6 +67,19 @@ export class UsuarioController {
         return await this.usuarioService.findRepresentantes();
     }
 
+    @Get('meu-nome-erp')
+    @Roles(TipoUsuarioEnum.REPRESENTANTE)
+    @ApiOperation({ summary: 'Buscar nome no ERP', description: 'Retorna o nome do representante no ERP. Usado na tela de primeiro acesso.' })
+    @ApiResponse({ status: 200, schema: { type: 'object', properties: { nome: { type: 'string', nullable: true } } } })
+    async getMeuNomeErp(@CurrentUser() user: UserFromToken) {
+        try {
+            const erpRep = await this.erpService.buscarRepresentante(user.usuario);
+            return { nome: erpRep?.NOMREP ?? null };
+        } catch {
+            return { nome: null };
+        }
+    }
+
     @Get(':id')
     @Roles(TipoUsuarioEnum.ADMIN)
     @ApiOperation({ summary: 'Buscar usuário por ID', description: 'Retorna um usuário específico pelo ID' })
@@ -98,6 +111,7 @@ export class UsuarioController {
     }
 
     @Post('complete-registration')
+    @Roles(TipoUsuarioEnum.REPRESENTANTE)
     @ApiOperation({ summary: 'Completar cadastro', description: 'Permite que o usuário complete seu cadastro (email, senha). O nome é buscado automaticamente do ERP.' })
     @ApiBody({ type: CompleteRegistrationDto })
     @ApiResponse({ status: 200, description: 'Cadastro completado com sucesso', type: UsuarioEntity })
