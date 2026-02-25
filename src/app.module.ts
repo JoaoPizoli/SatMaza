@@ -46,6 +46,22 @@ import { RolesGuard } from './auth/guards/roles.guard';
         password: configService.get('ERP_PASS'),
         database: configService.get('ERP_DB'),
         synchronize: false,
+
+        // Retry automático do TypeORM para falhas transitórias
+        retryAttempts: 5,
+        retryDelay: 3000,
+
+        // Timeout do driver mysql2
+        connectTimeout: 30000,
+
+        // Pool de conexões
+        extra: {
+          connectionLimit: 5,
+          waitForConnections: true,
+          queueLimit: 0,
+          enableKeepAlive: true,
+          keepAliveInitialDelay: 30000,
+        },
       }),
     }),
     SatModule,
