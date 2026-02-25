@@ -38,8 +38,7 @@ export class UsuarioEntity {
     @Column({ nullable: true })
     nome?: string;
 
-    @ApiHideProperty()
+    @ApiProperty({ description: 'Indica se o usuário já alterou a senha padrão', example: false })
     @Column({ default: false })
-    @Exclude()
     password_changed: boolean;
 }
