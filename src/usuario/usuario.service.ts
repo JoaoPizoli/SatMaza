@@ -80,7 +80,7 @@ export class UsuarioService implements OnModuleInit {
             dadosUsuario.senha = await bcrypt.hash(dadosUsuario.senha, salt);
         }
 
-        await this.usuarioRepository.update(id, dadosUsuario)
+        await this.usuarioRepository.update(id, dadosUsuario as any)
         return await this.findOne(id)
     }
 
