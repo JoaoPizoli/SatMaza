@@ -95,6 +95,22 @@ export class SatController {
         return await this.satService.getSatsByStatus(filter);
     }
 
+    @Get('dashboard/procedente')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @ApiOperation({ summary: 'SATs por Procedência', description: 'Retorna estatísticas de SATs agrupadas por reclamação procedente/improcedente' })
+    @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
+    async getSatsByProcedente(@Query() filter: DashboardFilterDto) {
+        return await this.satService.getSatsByProcedente(filter);
+    }
+
+    @Get('dashboard/procedente-by-lab')
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @ApiOperation({ summary: 'Procedência por Laboratório', description: 'Retorna contagem de procedente/improcedente agrupada por laboratório' })
+    @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
+    async getProcedenteByLab(@Query() filter: DashboardFilterDto) {
+        return await this.satService.getProcedenteByLab(filter);
+    }
+
     @Get('laboratorio/:laboratorio')
     @ApiOperation({ summary: 'Buscar SATs por laboratório', description: 'Retorna as SATs destinadas a um laboratório específico, paginadas.' })
     @ApiParam({ name: 'laboratorio', description: 'Laboratório de destino', enum: LaboratorioSatEnum })

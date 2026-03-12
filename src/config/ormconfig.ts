@@ -1,9 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
-// Em produção o Docker injeta as vars via env_file, mas carregamos
-// .env.production como fallback para quando rodamos fora do compose
-// (ex: migration:run local). dotenv não sobrescreve vars já definidas.
+
 dotenv.config({ path: '.env.production' });
 dotenv.config(); // fallback para .env em desenvolvimento local
 

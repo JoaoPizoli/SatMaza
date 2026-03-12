@@ -265,12 +265,72 @@ export class SatService {
         }));
     }
 
+    async getSatsByProcedente(filter: DashboardFilterDto) {
+        const qb = this.satRepository.createQueryBuilder('sat');
+        qb.leftJoin('sat.avt', 'avt');
+        this.applyFilters(qb, filter);
+
+        qb.select(
+            `CASE
+                WHEN avt.reclamacao_procedente = true THEN 'Procedente'
+                WHEN avt.reclamacao_procedente = false THEN 'Improcedente'
+                ELSE 'Pendente'
+            END`,
+            'name',
+        )
+            .addSelect('COUNT(sat.id)', 'value')
+            .groupBy(
+                `CASE
+                    WHEN avt.reclamacao_procedente = true THEN 'Procedente'
+                    WHEN avt.reclamacao_procedente = false THEN 'Improcedente'
+                    ELSE 'Pendente'
+                END`,
+            );
+
+        const result = await qb.getRawMany();
+        return result.map(item => ({
+            name: item.name,
+            value: Number(item.value),
+        }));
+    }
+
+    async getProcedenteByLab(filter: DashboardFilterDto) {
+        const qb = this.satRepository.createQueryBuilder('sat');
+        qb.leftJoin('sat.avt', 'avt');
+        this.applyFilters(qb, filter);
+
+        qb.select('sat.destino', 'destino')
+            .addSelect(
+                'SUM(CASE WHEN avt.reclamacao_procedente = true THEN 1 ELSE 0 END)',
+                'procedente',
+            )
+            .addSelect(
+                'SUM(CASE WHEN avt.reclamacao_procedente = false THEN 1 ELSE 0 END)',
+                'improcedente',
+            )
+            .andWhere('sat.destino IS NOT NULL')
+            .groupBy('sat.destino');
+
+        const result = await qb.getRawMany();
+        return result.map(item => ({
+            name: SAT_DESTINO_LABELS[item.destino] || item.destino,
+            procedente: Number(item.procedente),
+            improcedente: Number(item.improcedente),
+        }));
+    }
+
+    private ensureAvtJoin(qb: any) {
+        const alias = qb.expressionMap.aliases.find((a: any) => a.name === 'avt');
+        if (!alias) {
+            qb.leftJoin('sat.avt', 'avt');
+        }
+    }
+
     private applyFilters(qb: any, filter: DashboardFilterDto) {
         if (filter.startDate) {
             qb.andWhere('sat.createdAt >= :startDate', { startDate: filter.startDate });
         }
         if (filter.endDate) {
-            // Ajuste para incluir o final do dia — usar objeto Date evita concatenação de string no parâmetro
             const endOfDay = new Date(`${filter.endDate}T23:59:59.999`);
             qb.andWhere('sat.createdAt <= :endDate', { endDate: endOfDay });
         }
@@ -278,22 +338,19 @@ export class SatService {
             qb.andWhere('sat.representante_id = :representanteId', { representanteId: filter.representanteId });
         }
         if (filter.representanteCodigo) {
-            // Precisamos garantir que o join foi feito se não tiver sido feito ainda
-            // Para simplificar, assumimos que 'representante' é o alias para a relação sat.representante
-            // Como applyFilters é usado em contextos onde o join pode ou não existir, idealmente verifica-se.
-            // Mas como getSatsBySector não faz join, vamos fazer subquery ou left join condicional?
-            // Melhor: adicionar o join se não existir no main query builder, mas applyFilters recebe qb.
-
-            // Check if alias 'representante' is already used, if not, join.
             const alias = qb.expressionMap.aliases.find((a: any) => a.name === 'representante');
             if (!alias) {
                 qb.leftJoin('sat.representante', 'representante');
             }
-
             qb.andWhere('representante.usuario = :codRep', { codRep: filter.representanteCodigo });
         }
         if (filter.produto) {
             qb.andWhere('sat.produtos ILIKE :produto', { produto: `%${filter.produto}%` });
+        }
+        if (filter.procedente !== undefined && filter.procedente !== null) {
+            this.ensureAvtJoin(qb);
+            const isProcedente = filter.procedente === 'true';
+            qb.andWhere('avt.reclamacao_procedente = :procedente', { procedente: isProcedente });
         }
     }
 }
