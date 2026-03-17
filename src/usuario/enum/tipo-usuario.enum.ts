@@ -4,4 +4,5 @@ export enum TipoUsuarioEnum {
     BAGUA  = 'BAGUA',
     BSOLVENTE = 'BSOLVENTE',
     REPRESENTANTE = 'REPRESENTANTE',
+    REPRE_ATENDENTE = 'REPRE_ATENDENTE',
 }

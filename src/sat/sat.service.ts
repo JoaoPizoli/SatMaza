@@ -12,10 +12,12 @@ import { StatusSatEnum } from "./enum/status-sat.enum";
 import { LaboratorioSatEnum } from "./enum/laboratorio-sat.enum";
 import { UsuarioService } from "src/usuario/usuario.service";
 import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
+import { RepreAtendenteEntity } from "src/usuario/entity/repre_atendente.entity";
 import { UpdateSatDto } from "./dto/update-sat.dto";
 import { SatNotificationService } from "src/mail/sat-notification.service";
 import { DashboardFilterDto } from "./dto/dashboard-filter.dto";
 import { PaginationDto, PaginatedResult } from '../common/dto/pagination.dto';
+import type { UserFromToken } from "src/auth/decorators/current-user.decorator";
 
 const SAT_DESTINO_LABELS = {
     [LaboratorioSatEnum.BASE_AGUA]: 'Base Água',
@@ -29,6 +31,8 @@ export class SatService {
     constructor(
         @InjectRepository(SatEntity)
         private satRepository: Repository<SatEntity>,
+        @InjectRepository(RepreAtendenteEntity)
+        private repreAtendenteRepository: Repository<RepreAtendenteEntity>,
         private usuarioService: UsuarioService,
         private avtService: AvtService,
         @Inject(forwardRef(() => SatNotificationService))
@@ -197,9 +201,10 @@ export class SatService {
         return sat;
     }
 
-    async getSatsBySector(filter: DashboardFilterDto) {
+    async getSatsBySector(filter: DashboardFilterDto, user?: UserFromToken) {
         const qb = this.satRepository.createQueryBuilder('sat');
         this.applyFilters(qb, filter);
+        await this.applyRepreAtendenteFilter(qb, user);
 
         qb.select('sat.destino', 'name')
             .andWhere('sat.destino IS NOT NULL')
@@ -214,10 +219,11 @@ export class SatService {
         }));
     }
 
-    async getSatsByRepresentative(filter: DashboardFilterDto) {
+    async getSatsByRepresentative(filter: DashboardFilterDto, user?: UserFromToken) {
         const qb = this.satRepository.createQueryBuilder('sat');
         qb.leftJoin('sat.representante', 'representante');
         this.applyFilters(qb, filter);
+        await this.applyRepreAtendenteFilter(qb, user);
 
         qb.select('representante.usuario', 'usuario')
             .addSelect('representante.nome', 'nome')
@@ -233,9 +239,10 @@ export class SatService {
         }));
     }
 
-    async getTopProducts(filter: DashboardFilterDto) {
+    async getTopProducts(filter: DashboardFilterDto, user?: UserFromToken) {
         const qb = this.satRepository.createQueryBuilder('sat');
         this.applyFilters(qb, filter);
+        await this.applyRepreAtendenteFilter(qb, user);
 
         qb.select('sat.produtos', 'name')
             .addSelect('COUNT(sat.id)', 'value')
@@ -250,9 +257,10 @@ export class SatService {
         }));
     }
 
-    async getSatsByStatus(filter: DashboardFilterDto) {
+    async getSatsByStatus(filter: DashboardFilterDto, user?: UserFromToken) {
         const qb = this.satRepository.createQueryBuilder('sat');
         this.applyFilters(qb, filter);
+        await this.applyRepreAtendenteFilter(qb, user);
 
         qb.select('sat.status', 'name')
             .addSelect('COUNT(sat.id)', 'value')
@@ -265,10 +273,11 @@ export class SatService {
         }));
     }
 
-    async getSatsByProcedente(filter: DashboardFilterDto) {
+    async getSatsByProcedente(filter: DashboardFilterDto, user?: UserFromToken) {
         const qb = this.satRepository.createQueryBuilder('sat');
         qb.leftJoin('sat.avt', 'avt');
         this.applyFilters(qb, filter);
+        await this.applyRepreAtendenteFilter(qb, user);
 
         qb.select(
             `CASE
@@ -294,10 +303,11 @@ export class SatService {
         }));
     }
 
-    async getProcedenteByLab(filter: DashboardFilterDto) {
+    async getProcedenteByLab(filter: DashboardFilterDto, user?: UserFromToken) {
         const qb = this.satRepository.createQueryBuilder('sat');
         qb.leftJoin('sat.avt', 'avt');
         this.applyFilters(qb, filter);
+        await this.applyRepreAtendenteFilter(qb, user);
 
         qb.select('sat.destino', 'destino')
             .addSelect(
@@ -317,6 +327,23 @@ export class SatService {
             procedente: Number(item.procedente),
             improcedente: Number(item.improcedente),
         }));
+    }
+
+    private ensureRepresentanteJoin(qb: any) {
+        const alias = qb.expressionMap.aliases.find((a: any) => a.name === 'representante');
+        if (!alias) {
+            qb.leftJoin('sat.representante', 'representante');
+        }
+    }
+
+    private async applyRepreAtendenteFilter(qb: any, user?: UserFromToken) {
+        if (!user || user.tipo !== TipoUsuarioEnum.REPRE_ATENDENTE) return;
+
+        const repre = await this.repreAtendenteRepository.findOneBy({ id: user.id });
+        if (!repre || !repre.usuarios || repre.usuarios.length === 0) return; // vazio = vê tudo
+
+        this.ensureRepresentanteJoin(qb);
+        qb.andWhere('representante.usuario IN (:...repreUsuarios)', { repreUsuarios: repre.usuarios });
     }
 
     private ensureAvtJoin(qb: any) {

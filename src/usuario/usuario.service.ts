@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
 import { TipoUsuarioEnum } from "./enum/tipo-usuario.enum";
 import { UsuarioEntity } from "./entity/usuario.entity";
+import { RepreAtendenteEntity } from "./entity/repre_atendente.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CreateUsuarioDto } from "./dto/create-usuario.dto";
@@ -14,7 +15,9 @@ export class UsuarioService implements OnModuleInit {
 
     constructor(
         @InjectRepository(UsuarioEntity)
-        private usuarioRepository: Repository<UsuarioEntity>
+        private usuarioRepository: Repository<UsuarioEntity>,
+        @InjectRepository(RepreAtendenteEntity)
+        private repreAtendenteRepository: Repository<RepreAtendenteEntity>,
     ) { }
 
     async onModuleInit() {
@@ -122,5 +125,26 @@ export class UsuarioService implements OnModuleInit {
 
         await this.usuarioRepository.update(id, updateData);
         return (await this.findOne(id))!;
+    }
+
+    // ─── RepreAtendente ──────────────────────────────────────────────────────
+
+    async findAllRepreAtendentes(): Promise<RepreAtendenteEntity[]> {
+        return this.repreAtendenteRepository.find();
+    }
+
+    async findRepreAtendenteById(id: number): Promise<RepreAtendenteEntity | null> {
+        return this.repreAtendenteRepository.findOneBy({ id });
+    }
+
+    async findRepreAtendenteByEmail(email: string): Promise<RepreAtendenteEntity | null> {
+        return this.repreAtendenteRepository.findOneBy({ email_representante_comercial: email });
+    }
+
+    async updateRepreAtendenteSenha(id: number, senha: string): Promise<RepreAtendenteEntity> {
+        const salt = await bcrypt.genSalt(10);
+        const hashSenha = await bcrypt.hash(senha, salt);
+        await this.repreAtendenteRepository.update(id, { senha: hashSenha, password_changed: true });
+        return (await this.findRepreAtendenteById(id))!;
     }
 }

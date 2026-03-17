@@ -14,4 +14,10 @@ export class RepreAtendenteEntity {
 
     @Column()
     email_representante_comercial: string;
+
+    @Column({ nullable: true, select: false })
+    senha: string;
+
+    @Column({ default: false })
+    password_changed: boolean;
 }

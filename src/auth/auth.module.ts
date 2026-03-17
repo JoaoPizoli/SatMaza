@@ -9,13 +9,14 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { TokenBlacklistService } from "./token-blacklist.service";
 import { BlacklistedTokenEntity } from "./entity/blacklisted-token.entity";
 import { RefreshTokenEntity } from "./entity/refresh-token.entity";
+import { RepreAtendenteEntity } from "src/usuario/entity/repre_atendente.entity";
 import { UsuarioModule } from "src/usuario/usuario.module";
 
 @Module({
     imports: [
         UsuarioModule,
         PassportModule,
-        TypeOrmModule.forFeature([BlacklistedTokenEntity, RefreshTokenEntity]),
+        TypeOrmModule.forFeature([BlacklistedTokenEntity, RefreshTokenEntity, RepreAtendenteEntity]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

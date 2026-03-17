@@ -64,51 +64,51 @@ export class SatController {
     }
 
     @Get('dashboard/sector')
-    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.REPRE_ATENDENTE)
     @ApiOperation({ summary: 'SATs por Setor', description: 'Retorna estatísticas de SATs por setor' })
     @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
-    async getSatsBySector(@Query() filter: DashboardFilterDto) {
-        return await this.satService.getSatsBySector(filter);
+    async getSatsBySector(@Query() filter: DashboardFilterDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.getSatsBySector(filter, user);
     }
 
     @Get('dashboard/representative')
-    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.REPRE_ATENDENTE)
     @ApiOperation({ summary: 'SATs por Representante', description: 'Retorna estatísticas de SATs por representante' })
     @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
-    async getSatsByRepresentative(@Query() filter: DashboardFilterDto) {
-        return await this.satService.getSatsByRepresentative(filter);
+    async getSatsByRepresentative(@Query() filter: DashboardFilterDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.getSatsByRepresentative(filter, user);
     }
 
     @Get('dashboard/products')
-    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.REPRE_ATENDENTE)
     @ApiOperation({ summary: 'Top Produtos', description: 'Retorna os produtos com mais SATs' })
     @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
-    async getTopProducts(@Query() filter: DashboardFilterDto) {
-        return await this.satService.getTopProducts(filter);
+    async getTopProducts(@Query() filter: DashboardFilterDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.getTopProducts(filter, user);
     }
 
     @Get('dashboard/status')
-    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.REPRE_ATENDENTE)
     @ApiOperation({ summary: 'SATs por Status', description: 'Retorna estatísticas de SATs por status' })
     @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
-    async getSatsByStatus(@Query() filter: DashboardFilterDto) {
-        return await this.satService.getSatsByStatus(filter);
+    async getSatsByStatus(@Query() filter: DashboardFilterDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.getSatsByStatus(filter, user);
     }
 
     @Get('dashboard/procedente')
-    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.REPRE_ATENDENTE)
     @ApiOperation({ summary: 'SATs por Procedência', description: 'Retorna estatísticas de SATs agrupadas por reclamação procedente/improcedente' })
     @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
-    async getSatsByProcedente(@Query() filter: DashboardFilterDto) {
-        return await this.satService.getSatsByProcedente(filter);
+    async getSatsByProcedente(@Query() filter: DashboardFilterDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.getSatsByProcedente(filter, user);
     }
 
     @Get('dashboard/procedente-by-lab')
-    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR)
+    @Roles(TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.ORQUESTRADOR, TipoUsuarioEnum.REPRE_ATENDENTE)
     @ApiOperation({ summary: 'Procedência por Laboratório', description: 'Retorna contagem de procedente/improcedente agrupada por laboratório' })
     @ApiResponse({ status: 200, description: 'Estatísticas recuperadas' })
-    async getProcedenteByLab(@Query() filter: DashboardFilterDto) {
-        return await this.satService.getProcedenteByLab(filter);
+    async getProcedenteByLab(@Query() filter: DashboardFilterDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.getProcedenteByLab(filter, user);
     }
 
     @Get('laboratorio/:laboratorio')

@@ -67,6 +67,24 @@ export class UsuarioController {
         return await this.usuarioService.findRepresentantes();
     }
 
+    @Get('repre-atendente')
+    @Roles(TipoUsuarioEnum.ADMIN)
+    @ApiOperation({ summary: 'Listar representantes comerciais', description: 'Retorna todos os representantes comerciais (repre_atendente) cadastrados' })
+    @ApiResponse({ status: 200, description: 'Lista de representantes comerciais' })
+    async findAllRepreAtendentes() {
+        return await this.usuarioService.findAllRepreAtendentes();
+    }
+
+    @Patch('repre-atendente/:id/senha')
+    @Roles(TipoUsuarioEnum.ADMIN)
+    @ApiOperation({ summary: 'Definir senha de representante comercial', description: 'Define ou redefine a senha de um representante comercial' })
+    @ApiParam({ name: 'id', description: 'ID do representante comercial', example: 1 })
+    @ApiBody({ schema: { type: 'object', properties: { senha: { type: 'string', minLength: 6 } }, required: ['senha'] } })
+    @ApiResponse({ status: 200, description: 'Senha definida com sucesso' })
+    async updateRepreAtendenteSenha(@Param('id') id: number, @Body('senha') senha: string) {
+        return await this.usuarioService.updateRepreAtendenteSenha(id, senha);
+    }
+
     @Get('meu-nome-erp')
     @Roles(TipoUsuarioEnum.REPRESENTANTE)
     @ApiOperation({ summary: 'Buscar nome no ERP', description: 'Retorna o nome do representante no ERP. Usado na tela de primeiro acesso.' })

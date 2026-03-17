@@ -12,4 +12,5 @@ export interface UserFromToken {
     email: string;
     tipo: string;
     usuario: string;
+    entity_type?: 'usuario' | 'repre_atendente';
 }

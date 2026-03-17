@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { Throttle } from "@nestjs/throttler";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
@@ -8,6 +10,7 @@ import { Public } from "./decorators/public.decorator";
 import { CurrentUser } from "./decorators/current-user.decorator";
 import type { UserFromToken } from "./decorators/current-user.decorator";
 import { UsuarioService } from "src/usuario/usuario.service";
+import { RepreAtendenteEntity } from "src/usuario/entity/repre_atendente.entity";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { LoginResponseDto } from "./dto/login-response.dto";
 import { UsuarioEntity } from "src/usuario/entity/usuario.entity";
@@ -18,6 +21,8 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private usuarioService: UsuarioService,
+        @InjectRepository(RepreAtendenteEntity)
+        private repreAtendenteRepository: Repository<RepreAtendenteEntity>,
     ) {}
 
     @Public()
@@ -48,6 +53,19 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Dados do usuário', type: UsuarioEntity })
     @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
     async me(@CurrentUser() user: UserFromToken) {
+        if (user.entity_type === 'repre_atendente') {
+            const repre = await this.repreAtendenteRepository.findOneBy({ id: user.id });
+            if (!repre) return null;
+            return {
+                id: repre.id,
+                usuario: repre.email_representante_comercial,
+                nome: repre.nome_representante_comercial,
+                email: repre.email_representante_comercial,
+                tipo: 'REPRE_ATENDENTE',
+                password_changed: repre.password_changed,
+                createdAt: null,
+            };
+        }
         return await this.usuarioService.findOne(user.id);
     }
 

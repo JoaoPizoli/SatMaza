@@ -12,6 +12,9 @@ export class RefreshTokenEntity {
     @Column()
     usuario_id: number;
 
+    @Column({ default: 'usuario' })
+    entity_type: string;
+
     @Column({ type: 'timestamp' })
     expiresAt: Date;
 
