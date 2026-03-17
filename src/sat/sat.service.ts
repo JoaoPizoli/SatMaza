@@ -46,6 +46,11 @@ export class SatService {
             throw new BadRequestException('Usuário inválido ou não é representante');
         }
 
+        // Se sem_lote === true, garantir que o array de lotes seja vazio
+        if (dadosSat.sem_lote) {
+            dadosSat.lotes = [];
+        }
+
         // Os lotes vêm no DTO como array de objetos {lote, validade}.
         // O TypeORM com cascade: true na relação deve lidar com a criação dos SatLoteEntity
         const sat = this.satRepository.create(dadosSat);

@@ -49,9 +49,11 @@ export class SatPdfService {
                 this.addField(doc, 'Produto', sat.produtos);
                 this.addField(doc, 'Quantidade', String(sat.quantidade));
                 // Formatar Lotes e Validades
-                const lotesTexto = sat.lotes && sat.lotes.length > 0
-                    ? sat.lotes.map(l => `${l.lote} (Val: ${l.validade})`).join(', ')
-                    : '—';
+                const lotesTexto = sat.sem_lote
+                    ? 'Sem lote'
+                    : (sat.lotes && sat.lotes.length > 0
+                        ? sat.lotes.map(l => `${l.lote} (Val: ${l.validade})`).join(', ')
+                        : '—');
 
                 this.addField(doc, 'Lote(s) / Validade(s)', lotesTexto);
                 this.addField(doc, 'Contato', sat.contato);

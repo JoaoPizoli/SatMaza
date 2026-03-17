@@ -39,6 +39,10 @@ export class SatEntity {
     @Column()
     quantidade: number;
 
+    @ApiProperty({ description: 'Indica se a SAT não possui lote', example: false })
+    @Column({ type: 'boolean', default: false })
+    sem_lote: boolean;
+
     @ApiProperty({ description: 'Lista de lotes e suas validades', type: () => [SatLoteEntity] })
     @OneToMany(() => SatLoteEntity, (satLote) => satLote.sat, { cascade: true, eager: true })
     lotes: SatLoteEntity[];

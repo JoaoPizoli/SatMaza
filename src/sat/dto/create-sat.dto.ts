@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, ArrayMinSize, Matches } from "class-validator";
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, ArrayMinSize, Matches, IsBoolean, ValidateIf } from "class-validator";
 import { StatusSatEnum } from "../enum/status-sat.enum";
 import { LaboratorioSatEnum } from "../enum/laboratorio-sat.enum";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
@@ -23,6 +23,11 @@ export class CreateSatDto {
     @IsNumber()
     quantidade: number;
 
+    @ApiPropertyOptional({ description: 'Indica se a SAT não possui lote', example: false })
+    @IsOptional()
+    @IsBoolean()
+    sem_lote?: boolean;
+
     @ApiProperty({
         description: 'Lista de lotes e suas respectivas validades',
         type: 'array',
@@ -30,11 +35,12 @@ export class CreateSatDto {
             type: 'object',
             properties: {
                 lote: { type: 'string', example: '241001-001' },
-                validade: { type: 'string', example: '2026-12-31' }
+                validade: { type: 'string', example: '2026-12' }
             }
         },
-        example: [{ lote: '241001-001', validade: '2026-12-31' }]
+        example: [{ lote: '241001-001', validade: '2026-12' }]
     })
+    @ValidateIf((o) => !o.sem_lote)
     @IsArray()
     @ArrayMinSize(1, { message: 'Pelo menos um lote é obrigatório' })
     lotes: { lote: string, validade: string }[];
