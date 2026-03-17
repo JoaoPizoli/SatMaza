@@ -75,6 +75,72 @@ function buildMsgImprocedente(sat: SatEntity): string {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CENÁRIO 3 — Email ao Representante (Procedente)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function buildMsgRepresentanteProcedente(sat: SatEntity): string {
+    const avt = sat.avt!;
+    const nomeRepresentante = sat.representante?.nome ?? sat.representante?.usuario ?? String(sat.representante_id);
+
+    const marcacoes: string[] = [];
+    if (avt.reclamacao_procedente) marcacoes.push('Reclamação Procedente');
+    if (avt.troca) marcacoes.push('Troca');
+    if (avt.recolhimento_lote) marcacoes.push('Recolhimento de Lote');
+
+    return `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+      <p>Prezado(a) <strong>${nomeRepresentante}</strong>,</p>
+      <p>A SAT <strong>${sat.codigo}</strong> foi finalizada com as seguintes marcações:
+      <strong>${marcacoes.join(', ')}</strong>.</p>
+
+      <table style="border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cliente:</td><td style="padding: 4px 0;"><strong>${sat.cliente}</strong></td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cidade:</td><td style="padding: 4px 0;">${sat.cidade}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Produto:</td><td style="padding: 4px 0;">${sat.produtos}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${sat.lotes?.map(l => l.lote).join(', ') ?? '—'}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantidade:</td><td style="padding: 4px 0;">${sat.quantidade}</td></tr>
+      </table>
+
+      <p style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; margin: 16px 0; font-weight: bold;">
+        O Setor Comercial da Maza entrará em contato em breve.
+      </p>
+
+      <p>Para mais detalhes, consulte o relatório em PDF anexo.</p>
+      <br/>
+      <p>Atenciosamente,<br/>Sistema SAT Maza</p>
+    </div>
+  `;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CENÁRIO 4 — Email ao Representante (Improcedente)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function buildMsgRepresentanteImprocedente(sat: SatEntity): string {
+    const nomeRepresentante = sat.representante?.nome ?? sat.representante?.usuario ?? String(sat.representante_id);
+
+    return `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+      <p>Prezado(a) <strong>${nomeRepresentante}</strong>,</p>
+      <p>A SAT <strong>${sat.codigo}</strong> foi finalizada. Após análise técnica,
+      a reclamação foi considerada <strong>Improcedente</strong>.</p>
+
+      <table style="border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cliente:</td><td style="padding: 4px 0;"><strong>${sat.cliente}</strong></td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cidade:</td><td style="padding: 4px 0;">${sat.cidade}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Produto:</td><td style="padding: 4px 0;">${sat.produtos}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${sat.lotes?.map(l => l.lote).join(', ') ?? '—'}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantidade:</td><td style="padding: 4px 0;">${sat.quantidade}</td></tr>
+      </table>
+
+      <p>Para mais detalhes, consulte o relatório em PDF anexo.</p>
+      <br/>
+      <p>Atenciosamente,<br/>Sistema SAT Maza</p>
+    </div>
+  `;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @Injectable()
 export class SatNotificationService {
@@ -209,7 +275,46 @@ export class SatNotificationService {
             attachmentName: `${sat.codigo}_Relatorio.pdf`,
         });
 
-        this.logger.log(`Email enviado com sucesso para SAT ${sat.codigo}`);
+        this.logger.log(`Email interno enviado com sucesso para SAT ${sat.codigo}`);
+
+        // 5. Enviar email separado ao representante que abriu a SAT
+        await this.sendRepresentanteEmail(sat, isProcedente, pdfBuffer);
+    }
+
+    private async sendRepresentanteEmail(
+        sat: SatEntity,
+        isProcedente: boolean,
+        pdfBuffer: Buffer,
+    ): Promise<void> {
+        const emailRepresentante = sat.representante?.email;
+        if (!emailRepresentante) {
+            this.logger.warn(
+                `SAT ${sat.codigo}: Representante (ID ${sat.representante_id}) não possui email cadastrado. Email ao representante não será enviado.`,
+            );
+            return;
+        }
+
+        const html = isProcedente
+            ? buildMsgRepresentanteProcedente(sat)
+            : buildMsgRepresentanteImprocedente(sat);
+
+        try {
+            await this.graphMailService.sendWithPdfAttachment({
+                to: emailRepresentante,
+                subject: `SAT ${sat.codigo} — Resultado da Análise`,
+                html,
+                pdfBuffer,
+                attachmentName: `${sat.codigo}_Relatorio.pdf`,
+            });
+            this.logger.log(
+                `Email ao representante enviado com sucesso para SAT ${sat.codigo} (${emailRepresentante})`,
+            );
+        } catch (error) {
+            this.logger.error(
+                `Falha ao enviar email ao representante para SAT ${sat.codigo} (${emailRepresentante}): ${error.message}`,
+                error.stack,
+            );
+        }
     }
 
     /**
