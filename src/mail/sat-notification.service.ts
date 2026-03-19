@@ -6,6 +6,9 @@ import { SatEntity } from '../sat/entity/sat.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RepreAtendenteEntity } from '../usuario/entity/repre_atendente.entity';
+import { UsuarioService } from '../usuario/usuario.service';
+import { TipoUsuarioEnum } from '../usuario/enum/tipo-usuario.enum';
+import { LaboratorioSatEnum } from '../sat/enum/laboratorio-sat.enum';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CENÁRIO 1 — Reclamação Procedente / Troca / Recolhimento de Lote
@@ -158,6 +161,7 @@ export class SatNotificationService {
         private readonly graphMailService: GraphMailService,
         @InjectRepository(RepreAtendenteEntity)
         private readonly repreAtendenteRepository: Repository<RepreAtendenteEntity>,
+        private readonly usuarioService: UsuarioService,
     ) { }
 
     /**
@@ -384,5 +388,144 @@ export class SatNotificationService {
         });
 
         this.logger.log(`Email de redirecionamento enviado para SAT ${sat.codigo}`);
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // CENÁRIO 5 — Nova SAT criada por Representante
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    async notifyNewSatCreated(sat: SatEntity): Promise<void> {
+        try {
+            await this.withRetry(
+                () => this._doNotifyNewSatCreated(sat),
+                3,
+                2000,
+                `notifyNewSatCreated(${sat.codigo})`,
+            );
+        } catch (error) {
+            this.logger.error(
+                `Falha permanente ao enviar email de nova SAT ${sat.codigo} após 3 tentativas: ${error.message}`,
+                error.stack,
+            );
+        }
+    }
+
+    private async _doNotifyNewSatCreated(sat: SatEntity): Promise<void> {
+        const representante = sat.representante?.nome
+            ? `${sat.representante.usuario} — ${sat.representante.nome}`
+            : sat.representante?.usuario ?? String(sat.representante_id);
+
+        const html = `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+      <p>Prezados,</p>
+      <p>Uma nova SAT foi criada no sistema: <strong>${sat.codigo}</strong>.</p>
+
+      <table style="border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Representante:</td><td style="padding: 4px 0;"><strong>${representante}</strong></td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cliente:</td><td style="padding: 4px 0;"><strong>${sat.cliente}</strong></td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cidade:</td><td style="padding: 4px 0;">${sat.cidade}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Produto:</td><td style="padding: 4px 0;">${sat.produtos}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${formatLotes(sat)}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantidade:</td><td style="padding: 4px 0;">${sat.quantidade}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Contato:</td><td style="padding: 4px 0;">${sat.contato}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Telefone:</td><td style="padding: 4px 0;">${sat.telefone}</td></tr>
+      </table>
+
+      <p><strong>Reclamação:</strong></p>
+      <p style="background-color: #f8f9fa; border-left: 4px solid #dee2e6; padding: 12px 16px; margin: 8px 0;">${sat.reclamacao}</p>
+
+      <br/>
+      <p>Atenciosamente,<br/>Sistema SAT Maza</p>
+    </div>
+  `;
+
+        const to = 'sat@maza.com.br';
+
+        await this.graphMailService.sendMail({
+            to,
+            subject: `Nova SAT Criada: ${sat.codigo}`,
+            html,
+        });
+
+        this.logger.log(`Email de nova SAT enviado para ${to} — SAT ${sat.codigo}`);
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // CENÁRIO 6 — SAT encaminhada para laboratório
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    async notifySentToLab(sat: SatEntity): Promise<void> {
+        try {
+            await this.withRetry(
+                () => this._doNotifySentToLab(sat),
+                3,
+                2000,
+                `notifySentToLab(${sat.codigo})`,
+            );
+        } catch (error) {
+            this.logger.error(
+                `Falha permanente ao enviar email de encaminhamento da SAT ${sat.codigo} após 3 tentativas: ${error.message}`,
+                error.stack,
+            );
+        }
+    }
+
+    private async _doNotifySentToLab(sat: SatEntity): Promise<void> {
+        if (!sat.destino) {
+            this.logger.warn(`SAT ${sat.codigo}: destino não definido. Email de encaminhamento não será enviado.`);
+            return;
+        }
+
+        const tipoLab = sat.destino === LaboratorioSatEnum.BASE_AGUA
+            ? TipoUsuarioEnum.BAGUA
+            : TipoUsuarioEnum.BSOLVENTE;
+
+        const labLabel = sat.destino === LaboratorioSatEnum.BASE_AGUA
+            ? 'Base Água'
+            : 'Base Solvente';
+
+        const labUsers = await this.usuarioService.findByTipo(tipoLab);
+        const emails = labUsers
+            .map(u => u.email?.trim())
+            .filter((e): e is string => !!e);
+
+        if (emails.length === 0) {
+            this.logger.warn(`SAT ${sat.codigo}: Nenhum usuário do tipo ${tipoLab} possui email cadastrado. Email de encaminhamento não será enviado.`);
+            return;
+        }
+
+        const representante = sat.representante?.nome
+            ? `${sat.representante.usuario} — ${sat.representante.nome}`
+            : sat.representante?.usuario ?? String(sat.representante_id);
+
+        const html = `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+      <p>Prezados,</p>
+      <p>A SAT <strong>${sat.codigo}</strong> foi encaminhada para o laboratório <strong>${labLabel}</strong>.</p>
+
+      <table style="border-collapse: collapse; margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Representante:</td><td style="padding: 4px 0;"><strong>${representante}</strong></td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cliente:</td><td style="padding: 4px 0;"><strong>${sat.cliente}</strong></td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Cidade:</td><td style="padding: 4px 0;">${sat.cidade}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Produto:</td><td style="padding: 4px 0;">${sat.produtos}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Lote(s):</td><td style="padding: 4px 0;">${formatLotes(sat)}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #666;">Quantidade:</td><td style="padding: 4px 0;">${sat.quantidade}</td></tr>
+      </table>
+
+      <p><strong>Reclamação:</strong></p>
+      <p style="background-color: #f8f9fa; border-left: 4px solid #dee2e6; padding: 12px 16px; margin: 8px 0;">${sat.reclamacao}</p>
+
+      <br/>
+      <p>Atenciosamente,<br/>Sistema SAT Maza</p>
+    </div>
+  `;
+
+        await this.graphMailService.sendMail({
+            to: emails,
+            subject: `SAT Encaminhada: ${sat.codigo} — ${labLabel}`,
+            html,
+        });
+
+        this.logger.log(`Email de encaminhamento enviado para ${emails.join(', ')} — SAT ${sat.codigo} → ${labLabel}`);
     }
 }

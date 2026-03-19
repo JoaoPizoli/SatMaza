@@ -5,11 +5,13 @@ import { SatPdfService } from './sat-pdf.service';
 import { SatNotificationService } from './sat-notification.service';
 import { SatModule } from '../sat/sat.module';
 import { RepreAtendenteEntity } from '../usuario/entity/repre_atendente.entity';
+import { UsuarioModule } from '../usuario/usuario.module';
 
 @Module({
     imports: [
         forwardRef(() => SatModule),
-        TypeOrmModule.forFeature([RepreAtendenteEntity])
+        TypeOrmModule.forFeature([RepreAtendenteEntity]),
+        UsuarioModule,
     ],
     providers: [GraphMailService, SatPdfService, SatNotificationService],
     exports: [GraphMailService, SatPdfService, SatNotificationService],

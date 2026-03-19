@@ -111,6 +111,10 @@ export class UsuarioService implements OnModuleInit {
         return await this.usuarioRepository.find({ where: { tipo: TipoUsuarioEnum.REPRESENTANTE } });
     }
 
+    async findByTipo(tipo: TipoUsuarioEnum): Promise<UsuarioEntity[]> {
+        return await this.usuarioRepository.find({ where: { tipo } });
+    }
+
     async completeRegistration(id: number, dados: { nome: string; email: string; senha?: string }): Promise<UsuarioEntity> {
         const updateData: Partial<UsuarioEntity> = {
             nome: dados.nome,

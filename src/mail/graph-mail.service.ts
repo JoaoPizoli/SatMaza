@@ -91,4 +91,41 @@ export class GraphMailService {
       saveToSentItems: input.saveToSentItems ?? true,
     });
   }
+
+  async sendMail(input: {
+    to: string | string[];
+    cc?: string | string[];
+    subject: string;
+    html?: string;
+    text?: string;
+  }) {
+    const senderUpn = process.env.MAIL_SENDER_UPN!;
+    const toList = Array.isArray(input.to) ? input.to : [input.to];
+
+    const body =
+      input.html
+        ? { contentType: 'HTML', content: input.html }
+        : { contentType: 'Text', content: input.text ?? '' };
+
+    const ccList = input.cc
+      ? (Array.isArray(input.cc) ? input.cc : [input.cc])
+      : [];
+
+    const message: Record<string, any> = {
+      subject: input.subject,
+      body,
+      toRecipients: toList.map((address) => ({ emailAddress: { address } })),
+    };
+
+    if (ccList.length > 0) {
+      message.ccRecipients = ccList.map((address) => ({
+        emailAddress: { address },
+      }));
+    }
+
+    await this.graphClient.api(`/users/${senderUpn}/sendMail`).post({
+      message,
+      saveToSentItems: true,
+    });
+  }
 }

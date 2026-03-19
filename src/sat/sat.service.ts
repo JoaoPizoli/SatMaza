@@ -61,7 +61,20 @@ export class SatService {
 
         // Gerar código definitivo a partir do seq auto-incrementado
         saved.codigo = `SAT-${String(saved.seq).padStart(6, '0')}`;
-        return await this.satRepository.save(saved);
+        const finalSat = await this.satRepository.save(saved);
+
+        // Notificar criação de nova SAT (fire-and-forget)
+        const satCompleta = await this.findOne(finalSat.id);
+        if (satCompleta) {
+            this.satNotificationService.notifyNewSatCreated(satCompleta).catch((err) =>
+                this.logger.error(
+                    `Falha na notificação de nova SAT ${finalSat.codigo}: ${err.message}`,
+                    err.stack,
+                ),
+            );
+        }
+
+        return finalSat;
     }
 
     async createAvt(id: string, dadosAvt: CreateAvtDto, usuario_id: number): Promise<AvtEntity> {
@@ -178,6 +191,20 @@ export class SatService {
         }
         sat.status = status;
         await this.satRepository.save(sat);
+
+        // Notificar encaminhamento para laboratório (fire-and-forget)
+        if (status === StatusSatEnum.ENVIADO_BAGUA || status === StatusSatEnum.ENVIADO_BSOLVENTE) {
+            const satAtualizada = await this.findOne(id);
+            if (satAtualizada) {
+                this.satNotificationService.notifySentToLab(satAtualizada).catch((err) =>
+                    this.logger.error(
+                        `Falha na notificação de encaminhamento da SAT ${sat.codigo}: ${err.message}`,
+                        err.stack,
+                    ),
+                );
+            }
+        }
+
         return await this.findOne(id);
     }
 
