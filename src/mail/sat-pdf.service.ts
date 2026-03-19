@@ -103,18 +103,20 @@ export class SatPdfService {
 
                     if (laudoImage && laudoImage.mimeType.startsWith('image/')) {
                         this.addField(doc, 'Arquivo', laudoImage.originalName);
-                        doc.moveDown(0.5);
 
                         try {
-                            const pageWidth = doc.page.width - 100; // margins
-                            const imgOptions: Record<string, unknown> = { fit: [pageWidth, 500] };
+                            // Always start image on a new page to guarantee full space
+                            doc.addPage();
 
-                            // Check if we need a new page for the image
-                            if (doc.y > doc.page.height - 250) {
-                                doc.addPage();
-                            }
+                            const margin = 50;
+                            const pageWidth = doc.page.width - margin * 2;
+                            const pageHeight = doc.page.height - margin * 2;
 
-                            doc.image(laudoImage.buffer, imgOptions);
+                            doc.image(laudoImage.buffer, margin, margin, {
+                                fit: [pageWidth, pageHeight],
+                                align: 'center',
+                                valign: 'center',
+                            });
                         } catch (err) {
                             this.logger.warn(`Não foi possível embutir a imagem do laudo: ${err.message}`);
                             doc.fontSize(13).font('Helvetica').text('(Não foi possível embutir a imagem no PDF)');
