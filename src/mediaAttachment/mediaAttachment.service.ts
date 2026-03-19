@@ -174,6 +174,19 @@ export class MediaAttachmentService {
         return await this.mediaRepository.findBy(where);
     }
 
+    // ── Download de blob ──────────────────────────────────────────────────────
+
+    async downloadBlobToBuffer(blobName: string): Promise<Buffer> {
+        const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+        const blobClient = containerClient.getBlobClient(blobName);
+        const downloadResponse = await blobClient.download(0);
+        const chunks: Buffer[] = [];
+        for await (const chunk of downloadResponse.readableStreamBody as NodeJS.ReadableStream) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        return Buffer.concat(chunks);
+    }
+
     // ── Exclusão ─────────────────────────────────────────────────────────────
 
     async delete(id: string): Promise<void> {

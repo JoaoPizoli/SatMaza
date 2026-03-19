@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Header, NotFoundException, Param, Patch, Post, Query, Res, StreamableFile, UseGuards } from "@nestjs/common";
 import { CurrentUser } from "src/auth/decorators/current-user.decorator";
 import type { UserFromToken } from "src/auth/decorators/current-user.decorator";
 import { SatService } from "./sat.service";
@@ -16,13 +16,18 @@ import { Roles } from "src/auth/decorators/roles.decorator";
 import { TipoUsuarioEnum } from "src/usuario/enum/tipo-usuario.enum";
 import { DashboardFilterDto } from "./dto/dashboard-filter.dto";
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { SatPdfService } from "src/mail/sat-pdf.service";
+import { MediaAttachmentService } from "src/mediaAttachment/mediaAttachment.service";
+import type { Response } from 'express';
 
 @ApiTags('SAT')
 @ApiBearerAuth('access-token')
 @Controller('sat')
 export class SatController {
     constructor(
-        private satService: SatService
+        private satService: SatService,
+        private satPdfService: SatPdfService,
+        private mediaAttachmentService: MediaAttachmentService,
     ) { }
 
     @Post()
@@ -133,6 +138,36 @@ export class SatController {
     @ApiResponse({ status: 200, description: 'Lista de SATs com o status informado paginada' })
     async findSatsByStatus(@Param('status') status: StatusSatEnum, @Query() pagination: PaginationDto, @CurrentUser() user: UserFromToken) {
         return await this.satService.findSatsByStatus(status, pagination, user);
+    }
+
+    @Get(':id/pdf')
+    @ApiOperation({ summary: 'Gerar PDF do relatório AVT', description: 'Gera e retorna um PDF com os dados da AVT da SAT. Se o laudo for uma imagem, ela é embutida no PDF.' })
+    @ApiParam({ name: 'id', description: 'UUID da SAT' })
+    @ApiResponse({ status: 200, description: 'PDF gerado com sucesso', content: { 'application/pdf': {} } })
+    @ApiResponse({ status: 404, description: 'SAT não encontrada' })
+    async generatePdf(@Param('id') id: string, @Res() res: Response) {
+        const sat = await this.satService.findOne(id);
+        if (!sat) throw new NotFoundException('SAT não encontrada');
+
+        let laudoImage: import('src/mail/sat-pdf.service').LaudoImage | undefined;
+
+        if (sat.avt?.laudo && sat.avt.laudo.mimeType.startsWith('image/')) {
+            const buffer = await this.mediaAttachmentService.downloadBlobToBuffer(sat.avt.laudo.blobName);
+            laudoImage = {
+                buffer,
+                originalName: sat.avt.laudo.originalName ?? 'laudo',
+                mimeType: sat.avt.laudo.mimeType,
+            };
+        }
+
+        const pdfBuffer = await this.satPdfService.generatePdf(sat, laudoImage);
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${sat.codigo}_AVT.pdf"`,
+            'Content-Length': pdfBuffer.length,
+        });
+        res.end(pdfBuffer);
     }
 
     @Get(':id')

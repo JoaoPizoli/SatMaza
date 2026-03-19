@@ -1,15 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SatEntity } from '../sat/entity/sat.entity';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const PDFDocument = require('pdfkit');
 
+export interface LaudoImage {
+    buffer: Buffer;
+    originalName: string;
+    mimeType: string;
+}
+
 @Injectable()
 export class SatPdfService {
+    private readonly logger = new Logger(SatPdfService.name);
+
     /**
      * Gera um PDF da SAT com todos os dados relevantes e retorna como Buffer.
+     * Se laudoImage for fornecido e for uma imagem, ela é embutida no PDF.
      */
-    async generatePdf(sat: SatEntity): Promise<Buffer> {
+    async generatePdf(sat: SatEntity, laudoImage?: LaudoImage): Promise<Buffer> {
         return new Promise<Buffer>((resolve, reject) => {
             try {
                 const doc = new PDFDocument({ size: 'A4', margin: 50 });
@@ -123,6 +132,39 @@ export class SatPdfService {
                         'Recolhimento de Lote',
                         avt.recolhimento_lote ? '✔ SIM' : '✘ NÃO',
                     );
+
+                    // ── Laudo / Relatório ─────────────────────────────────────
+                    doc.moveDown(1);
+                    this.drawLine(doc);
+                    doc.moveDown(1);
+
+                    doc.fontSize(18).font('Helvetica-Bold').text('Laudo / Relatório');
+                    doc.moveDown(0.5);
+
+                    if (laudoImage && laudoImage.mimeType.startsWith('image/')) {
+                        this.addField(doc, 'Arquivo', laudoImage.originalName);
+                        doc.moveDown(0.5);
+
+                        try {
+                            const pageWidth = doc.page.width - 100; // margins
+                            const imgOptions: Record<string, unknown> = { fit: [pageWidth, 500] };
+
+                            // Check if we need a new page for the image
+                            if (doc.y > doc.page.height - 250) {
+                                doc.addPage();
+                            }
+
+                            doc.image(laudoImage.buffer, imgOptions);
+                        } catch (err) {
+                            this.logger.warn(`Não foi possível embutir a imagem do laudo: ${err.message}`);
+                            doc.fontSize(13).font('Helvetica').text('(Não foi possível embutir a imagem no PDF)');
+                        }
+                    } else if (avt.laudo) {
+                        const fileName = avt.laudo.originalName ?? avt.laudo.blobName.split('/').pop() ?? 'laudo';
+                        this.addField(doc, 'Arquivo anexado', `${fileName} (formato não incorporável no PDF)`);
+                    } else {
+                        doc.fontSize(13).font('Helvetica').text('Nenhum laudo anexado.');
+                    }
                 }
 
                 doc.end();
