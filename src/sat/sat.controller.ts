@@ -128,11 +128,11 @@ export class SatController {
     }
 
     @Get('status/:status')
-    @ApiOperation({ summary: 'Buscar SATs por status', description: 'Retorna as SATs com um status específico, paginadas.' })
+    @ApiOperation({ summary: 'Buscar SATs por status', description: 'Retorna as SATs com um status específico, paginadas. Representantes veem apenas suas próprias SATs.' })
     @ApiParam({ name: 'status', description: 'Status da SAT', enum: StatusSatEnum })
     @ApiResponse({ status: 200, description: 'Lista de SATs com o status informado paginada' })
-    async findSatsByStatus(@Param('status') status: StatusSatEnum, @Query() pagination: PaginationDto) {
-        return await this.satService.findSatsByStatus(status, pagination);
+    async findSatsByStatus(@Param('status') status: StatusSatEnum, @Query() pagination: PaginationDto, @CurrentUser() user: UserFromToken) {
+        return await this.satService.findSatsByStatus(status, pagination, user);
     }
 
     @Get(':id')

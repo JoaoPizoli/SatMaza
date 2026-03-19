@@ -144,18 +144,29 @@ export class SatService {
         return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findSatsByStatus(statusSat: StatusSatEnum, pagination?: PaginationDto): Promise<PaginatedResult<SatEntity>> {
+    async findSatsByStatus(statusSat: StatusSatEnum, pagination?: PaginationDto, user?: UserFromToken): Promise<PaginatedResult<SatEntity>> {
         const page = pagination?.page ?? 1;
         const limit = pagination?.limit ?? 20;
         const skip = (page - 1) * limit;
 
-        const [data, total] = await this.satRepository.findAndCount({
-            where: { status: statusSat },
-            relations: [...this.defaultRelations],
-            skip,
-            take: limit,
-            order: { createdAt: 'DESC' },
-        });
+        const qb = this.satRepository.createQueryBuilder('sat')
+            .leftJoinAndSelect('sat.representante', 'representante')
+            .leftJoinAndSelect('sat.evidencias', 'evidencias')
+            .leftJoinAndSelect('sat.avt', 'avt')
+            .leftJoinAndSelect('avt.laudo', 'laudo')
+            .leftJoinAndSelect('sat.lotes', 'lotes')
+            .where('sat.status = :statusSat', { statusSat })
+            .orderBy('sat.createdAt', 'DESC')
+            .skip(skip)
+            .take(limit);
+
+        if (user?.tipo === TipoUsuarioEnum.REPRESENTANTE) {
+            qb.andWhere('sat.representante_id = :userId', { userId: user.id });
+        }
+
+        await this.applyRepreAtendenteFilter(qb, user);
+
+        const [data, total] = await qb.getManyAndCount();
 
         return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
