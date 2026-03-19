@@ -32,7 +32,7 @@ export class SatPdfService {
                 doc
                     .fontSize(26)
                     .font('Helvetica-Bold')
-                    .text(`Relatório SAT — ${sat.codigo}`, { align: 'center' });
+                    .text(`Relatório AVT — ${sat.codigo}`, { align: 'center' });
 
                 doc.moveDown(0.5);
                 doc
@@ -42,46 +42,6 @@ export class SatPdfService {
                         `Gerado em: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`,
                         { align: 'center' },
                     );
-
-                doc.moveDown(1);
-                this.drawLine(doc);
-                doc.moveDown(1);
-
-                // ── Dados da SAT ──────────────────────────────────────────
-                doc.fontSize(18).font('Helvetica-Bold').text('Dados da SAT');
-                doc.moveDown(0.5);
-
-                this.addField(doc, 'Código', sat.codigo);
-                this.addField(doc, 'Status', sat.status);
-                this.addField(doc, 'Cliente', sat.cliente);
-                this.addField(doc, 'Cidade', sat.cidade);
-                this.addField(doc, 'Produto', sat.produtos);
-                this.addField(doc, 'Quantidade', String(sat.quantidade));
-                // Formatar Lotes e Validades
-                const lotesTexto = sat.sem_lote
-                    ? 'Sem lote'
-                    : (sat.lotes && sat.lotes.length > 0
-                        ? sat.lotes.map(l => `${l.lote} (Val: ${l.validade})`).join(', ')
-                        : '—');
-
-                this.addField(doc, 'Lote(s) / Validade(s)', lotesTexto);
-                this.addField(doc, 'Contato', sat.contato);
-                this.addField(doc, 'Telefone', sat.telefone);
-                this.addField(
-                    doc,
-                    'Representante',
-                    sat.representante?.usuario ?? String(sat.representante_id),
-                );
-                this.addField(doc, 'Destino', sat.destino ?? '—');
-                this.addField(
-                    doc,
-                    'Data de Criação',
-                    new Date(sat.createdAt).toLocaleDateString('pt-BR'),
-                );
-
-                doc.moveDown(0.5);
-                doc.fontSize(14).font('Helvetica-Bold').text('Reclamação:');
-                doc.fontSize(13).font('Helvetica').text(sat.reclamacao ?? '—');
 
                 doc.moveDown(1);
                 this.drawLine(doc);
