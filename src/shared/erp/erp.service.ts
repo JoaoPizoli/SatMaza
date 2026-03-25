@@ -51,14 +51,21 @@ export class ErpService {
 
     async buscarProdutos(busca?: string): Promise<any[]> {
         if (busca && busca.trim()) {
+            const palavras = busca.trim().split(/\s+/).filter(Boolean);
+
+            const conditions = palavras.map(
+                () => "(DESCRICAO_ITEM LIKE ? OR CODIGO_ITEM LIKE ?)",
+            );
+            const params = palavras.flatMap((p) => [`%${p}%`, `%${p}%`]);
+
             return await this.erpDataSource.query(
                 `SELECT * FROM VW_PRODUTOS WHERE 
-                    (DESCRICAO_ITEM LIKE ? OR CODIGO_ITEM LIKE ?) 
+                    ${conditions.join(" AND ")}
                     AND DEPARTAMENTO = 'PRODUTO ACABADO'
                     AND CODIGO_EMPRESA = 001
                     AND DESCRICAO_ITEM NOT LIKE '%ÑUSAR+%'
-                    `,
-                [`%${busca}%`, `%${busca}%`],
+                    LIMIT 50`,
+                params,
             );
         }
 
