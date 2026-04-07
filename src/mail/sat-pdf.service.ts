@@ -58,6 +58,7 @@ export class SatPdfService {
                 this.addField(doc, 'Cliente', sat.cliente ?? '—');
                 this.addField(doc, 'Cidade', sat.cidade ?? '—');
                 this.addField(doc, 'Produto', sat.produtos ?? '—');
+                this.addField(doc, 'Reclamação', sat.reclamacao ?? '—');
 
                 doc.moveDown(1);
                 this.drawThickLine(doc);
