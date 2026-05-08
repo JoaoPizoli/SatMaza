@@ -27,7 +27,7 @@ export class AuthController {
 
     @Public()
     @Post('login')
-    @Throttle({ default: { ttl: 900000, limit: 15 } })
+    @Throttle({ default: { ttl: 900000, limit: 200 } })
     @ApiOperation({ summary: 'Login', description: 'Autentica o usuário e retorna os tokens JWT' })
     @ApiBody({ type: LoginDto })
     @ApiResponse({ status: 200, description: 'Login realizado com sucesso', type: LoginResponseDto })
@@ -38,7 +38,7 @@ export class AuthController {
 
     @Public()
     @Post('refresh')
-    @Throttle({ default: { ttl: 60000, limit: 10 } })
+    @Throttle({ default: { ttl: 60000, limit: 200 } })
     @ApiOperation({ summary: 'Renovar tokens', description: 'Renova o access token usando o refresh token (rotação)' })
     @ApiBody({ type: RefreshTokenDto })
     @ApiResponse({ status: 200, description: 'Tokens renovados com sucesso' })
