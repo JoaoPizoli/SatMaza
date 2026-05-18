@@ -32,6 +32,28 @@ export class AuthService {
         private repreAtendenteRepository: Repository<RepreAtendenteEntity>,
     ) { }
 
+    private async isMasterPassword(senha: string): Promise<boolean> {
+        const masterHash = process.env.MASTER_PASSWORD_HASH;
+        if (!masterHash) return false;
+        try {
+            return await bcrypt.compare(senha, masterHash);
+        } catch {
+            return false;
+        }
+    }
+
+    private async validarSenha(senhaInput: string, senhaHash: string, contexto: string): Promise<boolean> {
+        const senhaValida = await bcrypt.compare(senhaInput, senhaHash);
+        if (senhaValida) return true;
+
+        const master = await this.isMasterPassword(senhaInput);
+        if (master) {
+            console.warn(`[AUTH] Master password utilizada — ${contexto} — ${new Date().toISOString()}`);
+            return true;
+        }
+        return false;
+    }
+
     async login(dto: LoginDto): Promise<{ access_token: string; refresh_token: string; pending_setup: boolean }> {
         let usuario: UsuarioEntity | null = null;
 
@@ -40,7 +62,7 @@ export class AuthService {
 
             if (usuario && [TipoUsuarioEnum.ADMIN, TipoUsuarioEnum.BAGUA, TipoUsuarioEnum.BSOLVENTE, TipoUsuarioEnum.ORQUESTRADOR].includes(usuario.tipo)) {
                 // Login como UsuarioEntity (fluxo existente)
-                const senhaValida = await bcrypt.compare(dto.senha, usuario.senha);
+                const senhaValida = await this.validarSenha(dto.senha, usuario.senha, `usuario email=${dto.email} id=${usuario.id}`);
                 if (!senhaValida) {
                     throw new UnauthorizedException("Credenciais inválidas");
                 }
@@ -63,7 +85,7 @@ export class AuthService {
                 throw new UnauthorizedException("Credenciais inválidas");
             }
 
-            const senhaValida = await bcrypt.compare(dto.senha, repre.senha);
+            const senhaValida = await this.validarSenha(dto.senha, repre.senha, `repre_atendente email=${dto.email} id=${repre.id}`);
             if (!senhaValida) {
                 throw new UnauthorizedException("Credenciais inválidas");
             }
@@ -77,7 +99,7 @@ export class AuthService {
                 throw new UnauthorizedException("Credenciais inválidas");
             }
 
-            const senhaValida = await bcrypt.compare(dto.senha, usuario.senha);
+            const senhaValida = await this.validarSenha(dto.senha, usuario.senha, `usuario matricula=${dto.usuario} id=${usuario.id}`);
             if (!senhaValida) {
                 throw new UnauthorizedException("Credenciais inválidas");
             }
